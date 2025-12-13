@@ -3,86 +3,146 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Loading Media...</title>
+  <title>Loading...</title>
+  <!-- OG tags will be updated by JS -->
   <meta property="og:type" content="video.other">
+  <meta property="og:site_name" content="Forensic Capture - EVIDENTIA">
+  <meta name="twitter:card" content="player">
+  <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0f;
+      background: #0d0d12;
       color: #fff;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
     }
     .header {
-      background: rgba(0,0,0,0.5);
+      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
       padding: 1rem 2rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
-    .logo { display: flex; align-items: center; gap: 0.5rem; color: #e94560; font-weight: bold; text-decoration: none; }
-    .logo span { font-size: 1.2rem; }
-    .share-btn {
-      background: #e94560;
-      color: white;
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .logo-icon { font-size: 1.5rem; }
+    .header-actions { display: flex; gap: 0.75rem; }
+    .btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.9rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
     }
-    .share-btn:hover { background: #ff6b6b; }
-    .content {
+    .btn:hover { background: rgba(255,255,255,0.2); }
+    .btn-primary { background: #e94560; }
+    .btn-primary:hover { background: #ff6b6b; }
+
+    .video-section {
+      padding-top: 60px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .video-container {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
+      background: #000;
+      position: relative;
     }
-    .media-container {
-      max-width: 1200px;
+    video {
       width: 100%;
-      text-align: center;
+      max-height: calc(100vh - 200px);
+      outline: none;
     }
-    video, img {
+    .video-container img {
       max-width: 100%;
-      max-height: 80vh;
-      border-radius: 8px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      max-height: calc(100vh - 200px);
     }
-    audio {
-      width: 100%;
-      max-width: 600px;
-    }
-    .file-info {
-      margin-top: 1.5rem;
-      color: #888;
-      font-size: 0.9rem;
-    }
-    .file-info .filename {
-      color: #fff;
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-    }
-    .download-btn {
-      display: inline-block;
-      margin-top: 1rem;
-      background: rgba(255,255,255,0.1);
-      color: #4ecdc4;
-      padding: 0.75rem 1.5rem;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-    .download-btn:hover { background: rgba(255,255,255,0.2); }
-    .loader {
+    .audio-player {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
+      padding: 4rem 2rem;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+    .audio-icon { font-size: 5rem; margin-bottom: 2rem; }
+    audio { width: 100%; max-width: 500px; }
+
+    .info-section {
+      background: #0d0d12;
+      padding: 1.5rem 2rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .info-content {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .info-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+    .info-meta {
+      display: flex;
+      gap: 1.5rem;
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .info-meta span { display: flex; align-items: center; gap: 0.4rem; }
+    .share-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .share-url-box {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .share-url-box input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #4ecdc4;
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    .loader {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0d0d12;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
     }
     .spinner {
       width: 50px;
@@ -91,52 +151,116 @@
       border-top-color: #e94560;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .error {
+    .loader p { color: #888; }
+
+    .error-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      padding: 3rem;
+      padding: 2rem;
     }
-    .error h1 { color: #e94560; margin-bottom: 1rem; }
-    .error p { color: #888; }
-    .error a { color: #4ecdc4; }
-    .pdf-container {
-      width: 100%;
-      height: 80vh;
-      border-radius: 8px;
-      overflow: hidden;
+    .error-page h1 { color: #e94560; margin-bottom: 1rem; font-size: 2rem; }
+    .error-page p { color: #888; margin-bottom: 1.5rem; }
+    .error-page a { color: #4ecdc4; }
+
+    .pdf-viewer {
+      flex: 1;
+      display: flex;
+      align-items: stretch;
     }
-    .pdf-container iframe {
+    .pdf-viewer iframe {
       width: 100%;
-      height: 100%;
+      height: calc(100vh - 200px);
       border: none;
     }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #00b894;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: none;
+      z-index: 1001;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .powered-by {
+      text-align: center;
+      padding: 1rem;
+      color: #555;
+      font-size: 0.8rem;
+    }
+    .powered-by a { color: #888; text-decoration: none; }
+    .powered-by a:hover { color: #fff; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <a href="/" class="logo">
-      <span>⚖️</span> Forensic Capture
-    </a>
-    <button class="share-btn" onclick="shareLink()">📤 Share</button>
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <p>Loading media...</p>
   </div>
 
-  <div class="content">
-    <div class="media-container" id="mediaContainer">
-      <div class="loader">
-        <div class="spinner"></div>
-        <p>Loading media...</p>
+  <div id="content" style="display:none">
+    <header class="header">
+      <a href="/" class="logo">
+        <span class="logo-icon">⚖️</span>
+        Forensic Capture
+      </a>
+      <div class="header-actions">
+        <button class="btn" onclick="downloadFile()">⬇️ Download</button>
+        <button class="btn btn-primary" onclick="shareLink()">📤 Share</button>
+      </div>
+    </header>
+
+    <div class="video-section">
+      <div class="video-container" id="mediaPlayer"></div>
+
+      <div class="info-section">
+        <div class="info-content">
+          <h1 class="info-title" id="mediaTitle">Media File</h1>
+          <div class="info-meta">
+            <span id="mediaType">📁 File</span>
+            <span id="mediaDate"></span>
+          </div>
+          <div class="share-row">
+            <div class="share-url-box">
+              <input type="text" id="shareUrl" readonly>
+              <button class="btn" onclick="copyUrl()">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="powered-by">
+        <a href="/">Powered by Forensic Capture - EVIDENTIA Platform</a>
       </div>
     </div>
   </div>
+
+  <div class="notification" id="notification"></div>
 
   <script>
     const SUPABASE_URL = 'https://tvecnfdqakrevzaeifpk.supabase.co';
     const BUCKET = 'court-evidence';
     const FOLDER = 'media-shares';
 
+    let currentFileUrl = null;
+    let currentFileName = null;
+
     async function loadMedia() {
-      // Get slug from URL
       const pathParts = window.location.pathname.split('/');
       const slug = pathParts[pathParts.length - 1].replace('.html', '');
 
@@ -146,8 +270,7 @@
       }
 
       try {
-        // Try different extensions
-        const extensions = ['mp4', 'mov', 'webm', 'mp3', 'wav', 'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'];
+        const extensions = ['mp4', 'mov', 'webm', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'ogg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt'];
         let fileUrl = null;
         let fileExt = null;
 
@@ -166,72 +289,94 @@
           return;
         }
 
-        // Determine media type and render
-        const container = document.getElementById('mediaContainer');
-        let mediaHtml = '';
-        let title = `${slug}.${fileExt}`;
+        currentFileUrl = fileUrl;
+        currentFileName = `${slug}.${fileExt}`;
 
-        if (['mp4', 'mov', 'webm'].includes(fileExt)) {
-          mediaHtml = `
-            <video controls autoplay>
+        // Update page info
+        const mediaPlayer = document.getElementById('mediaPlayer');
+        const mediaTitle = document.getElementById('mediaTitle');
+        const mediaType = document.getElementById('mediaType');
+        const mediaDate = document.getElementById('mediaDate');
+
+        mediaDate.textContent = `📅 ${new Date().toLocaleDateString()}`;
+        document.getElementById('shareUrl').value = window.location.href;
+
+        // Render based on file type
+        if (['mp4', 'mov', 'webm', 'avi', 'mkv'].includes(fileExt)) {
+          document.title = `Video - ${slug} | Forensic Capture`;
+          mediaTitle.textContent = `Video Recording (${slug})`;
+          mediaType.textContent = '🎬 Video';
+          mediaPlayer.innerHTML = `
+            <video controls autoplay playsinline>
               <source src="${fileUrl}" type="video/${fileExt === 'mov' ? 'quicktime' : fileExt}">
               Your browser does not support video playback.
             </video>
           `;
-          document.title = `Video - ${slug}`;
-        } else if (['mp3', 'wav'].includes(fileExt)) {
-          mediaHtml = `
-            <div style="padding:3rem">
-              <div style="font-size:4rem;margin-bottom:1rem">🎵</div>
+        } else if (['mp3', 'wav', 'm4a', 'ogg'].includes(fileExt)) {
+          document.title = `Audio - ${slug} | Forensic Capture`;
+          mediaTitle.textContent = `Audio Recording (${slug})`;
+          mediaType.textContent = '🎵 Audio';
+          mediaPlayer.innerHTML = `
+            <div class="audio-player">
+              <div class="audio-icon">🎵</div>
               <audio controls autoplay>
                 <source src="${fileUrl}" type="audio/${fileExt === 'mp3' ? 'mpeg' : fileExt}">
               </audio>
             </div>
           `;
-          document.title = `Audio - ${slug}`;
-        } else if (['png', 'jpg', 'jpeg', 'gif'].includes(fileExt)) {
-          mediaHtml = `<img src="${fileUrl}" alt="Image">`;
-          document.title = `Image - ${slug}`;
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExt)) {
+          document.title = `Image - ${slug} | Forensic Capture`;
+          mediaTitle.textContent = `Image (${slug})`;
+          mediaType.textContent = '🖼️ Image';
+          mediaPlayer.innerHTML = `<img src="${fileUrl}" alt="Image">`;
         } else if (fileExt === 'pdf') {
-          mediaHtml = `
-            <div class="pdf-container">
+          document.title = `PDF - ${slug} | Forensic Capture`;
+          mediaTitle.textContent = `PDF Document (${slug})`;
+          mediaType.textContent = '📄 PDF';
+          mediaPlayer.innerHTML = `
+            <div class="pdf-viewer">
               <iframe src="${fileUrl}"></iframe>
             </div>
           `;
-          document.title = `PDF - ${slug}`;
         } else {
-          mediaHtml = `
-            <div style="padding:3rem">
-              <div style="font-size:4rem;margin-bottom:1rem">📄</div>
-              <p style="color:#888;margin-bottom:1rem">File: ${slug}.${fileExt}</p>
+          document.title = `File - ${slug} | Forensic Capture`;
+          mediaTitle.textContent = `File (${slug}.${fileExt})`;
+          mediaType.textContent = '📁 Document';
+          mediaPlayer.innerHTML = `
+            <div class="audio-player">
+              <div class="audio-icon">📄</div>
+              <p style="color:#888">Click download to view this file</p>
             </div>
           `;
-          document.title = `File - ${slug}`;
         }
 
-        mediaHtml += `
-          <div class="file-info">
-            <div class="filename">${slug}.${fileExt}</div>
-            <a href="${fileUrl}" download class="download-btn">⬇️ Download</a>
-          </div>
-        `;
-
-        container.innerHTML = mediaHtml;
+        // Show content
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
 
       } catch (error) {
         console.error(error);
-        showError('Failed to load media: ' + error.message);
+        showError('Failed to load: ' + error.message);
       }
     }
 
     function showError(message) {
-      document.getElementById('mediaContainer').innerHTML = `
-        <div class="error">
-          <h1>⚠️ Error</h1>
+      document.getElementById('loader').innerHTML = `
+        <div class="error-page">
+          <h1>⚠️ Media Not Found</h1>
           <p>${message}</p>
-          <p style="margin-top:1rem"><a href="/">← Back to Forensic Capture</a></p>
+          <p><a href="/">← Back to Forensic Capture</a></p>
         </div>
       `;
+    }
+
+    function downloadFile() {
+      if (currentFileUrl) {
+        const a = document.createElement('a');
+        a.href = currentFileUrl;
+        a.download = currentFileName;
+        a.click();
+      }
     }
 
     function shareLink() {
@@ -241,9 +386,22 @@
           url: window.location.href
         });
       } else {
-        navigator.clipboard.writeText(window.location.href);
-        alert('Link copied to clipboard!');
+        copyUrl();
       }
+    }
+
+    function copyUrl() {
+      const input = document.getElementById('shareUrl');
+      input.select();
+      document.execCommand('copy');
+      showNotification('📋 Link copied to clipboard!');
+    }
+
+    function showNotification(message) {
+      const notif = document.getElementById('notification');
+      notif.textContent = message;
+      notif.style.display = 'block';
+      setTimeout(() => { notif.style.display = 'none'; }, 3000);
     }
 
     loadMedia();
