@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload - Forensic Capture</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: rgba(0,0,0,0.3);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .logo h1 {
+      font-size: 1.25rem;
+      background: linear-gradient(135deg, #e94560, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo span { color: #888; font-size: 0.85rem; }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .container {
+      flex: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+    }
+    .upload-panel {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 2rem;
+    }
+    .upload-panel h2 {
+      margin-bottom: 1.5rem;
+      color: #ccc;
+    }
+    .drop-zone {
+      border: 2px dashed rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 1.5rem;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #e94560;
+      background: rgba(233,69,96,0.1);
+    }
+    .drop-zone-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .drop-zone p { color: #888; margin-bottom: 0.5rem; }
+    .drop-zone .supported { font-size: 0.8rem; color: #666; }
+    input[type="file"] { display: none; }
+    .file-info {
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .file-info.active { display: block; }
+    .file-info .name { font-weight: 500; color: #4ecdc4; }
+    .file-info .size { color: #888; font-size: 0.85rem; }
+    .btn {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn:hover { background: #ff6b6b; }
+    .btn:disabled { background: #555; cursor: not-allowed; }
+    .btn-success { background: #00b894; }
+    .btn-success:hover { background: #00d9a5; }
+    .progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin: 1rem 0;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar.active { display: block; }
+    .progress-bar-fill {
+      height: 100%;
+      background: #00b894;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .result {
+      background: rgba(0,184,148,0.1);
+      border: 1px solid #00b894;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      display: none;
+    }
+    .result.active { display: block; }
+    .result h3 { color: #00b894; margin-bottom: 1rem; }
+    .result-url {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .result-url input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #4ecdc4;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+    .result-url button {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .result-url button:hover { background: #ff6b6b; }
+    .preview-box {
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+    .preview-box video, .preview-box img {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+    }
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #00b894;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚖️</div>
+      <div>
+        <h1>Forensic Capture</h1>
+        <span>File Upload</span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="/">HTML Editor</a>
+      <a href="/upload.html" style="color:#fff;background:rgba(255,255,255,0.1)">File Upload</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="upload-panel">
+      <h2>📤 Upload & Share Files</h2>
+
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-zone-icon">📁</div>
+        <p>Drag & drop files here or click to browse</p>
+        <p class="supported">Supports: Video (MP4, MOV, WebM), Audio (MP3, WAV), Images (PNG, JPG, GIF), PDF, Documents</p>
+      </div>
+
+      <input type="file" id="fileInput" accept="video/*,audio/*,image/*,.pdf,.doc,.docx,.txt">
+
+      <div class="file-info" id="fileInfo">
+        <div class="name" id="fileName"></div>
+        <div class="size" id="fileSize"></div>
+      </div>
+
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+
+      <button class="btn" id="uploadBtn" onclick="uploadFile()" disabled>📤 Upload File</button>
+
+      <div class="result" id="result">
+        <h3>✅ Upload Complete!</h3>
+        <p style="color:#888;margin-bottom:1rem">Share this link:</p>
+        <div class="result-url">
+          <input type="text" id="resultUrl" readonly>
+          <button onclick="copyUrl()">📋 Copy</button>
+        </div>
+        <div class="preview-box" id="previewBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://tvecnfdqakrevzaeifpk.supabase.co';
+    let selectedFile = null;
+
+    // Drop zone handlers
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      selectedFile = file;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatSize(file.size);
+      document.getElementById('fileInfo').classList.add('active');
+      document.getElementById('uploadBtn').disabled = false;
+      document.getElementById('result').classList.remove('active');
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    async function uploadFile() {
+      if (!selectedFile) return;
+
+      const btn = document.getElementById('uploadBtn');
+      const progressBar = document.getElementById('progressBar');
+      const progressFill = document.getElementById('progressFill');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Uploading...';
+      progressBar.classList.add('active');
+      progressFill.style.width = '30%';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        progressFill.style.width = '60%';
+
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/upload-file`, {
+          method: 'POST',
+          body: formData
+        });
+
+        progressFill.style.width = '90%';
+
+        const result = await response.json();
+
+        if (!response.ok || result.error) {
+          throw new Error(result.error || 'Upload failed');
+        }
+
+        progressFill.style.width = '100%';
+
+        // Show result - use viewer page URL for sharing
+        const viewerUrl = `${window.location.origin}/m/${result.slug}`;
+        document.getElementById('resultUrl').value = viewerUrl;
+        document.getElementById('result').classList.add('active');
+
+        // Show preview using raw URL
+        const previewBox = document.getElementById('previewBox');
+        const fileType = selectedFile.type;
+
+        if (fileType.startsWith('video/')) {
+          previewBox.innerHTML = `<video controls src="${result.url}"></video>`;
+        } else if (fileType.startsWith('image/')) {
+          previewBox.innerHTML = `<img src="${result.url}" alt="Preview">`;
+        } else if (fileType.startsWith('audio/')) {
+          previewBox.innerHTML = `<audio controls src="${result.url}" style="width:100%;margin:1rem 0"></audio>`;
+        } else {
+          previewBox.innerHTML = `<p style="padding:1rem;color:#888">Preview not available - <a href="${viewerUrl}" target="_blank" style="color:#4ecdc4">Open viewer page</a></p>`;
+        }
+
+        showNotification('✅ File uploaded successfully!');
+
+      } catch (error) {
+        console.error(error);
+        showNotification('❌ ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Upload File';
+        setTimeout(() => {
+          progressBar.classList.remove('active');
+          progressFill.style.width = '0%';
+        }, 1000);
+      }
+    }
+
+    function copyUrl() {
+      const input = document.getElementById('resultUrl');
+      input.select();
+      document.execCommand('copy');
+      showNotification('📋 Link copied!');
+    }
+
+    function showNotification(message, type = 'success') {
+      const notif = document.getElementById('notification');
+      notif.textContent = message;
+      notif.style.background = type === 'error' ? '#e94560' : '#00b894';
+      notif.style.display = 'block';
+      setTimeout(() => { notif.style.display = 'none'; }, 3000);
+    }
+  </script>
+</body>
+</html>
