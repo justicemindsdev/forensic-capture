@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Loading...</title>
-  <!-- OG tags will be updated by JS -->
   <meta property="og:type" content="video.other">
   <meta property="og:site_name" content="Forensic Capture - EVIDENTIA">
   <meta name="twitter:card" content="player">
@@ -18,16 +17,15 @@
       min-height: 100vh;
     }
     .header {
-      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-      padding: 1rem 2rem;
+      background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%);
+      padding: 0.75rem 1.5rem;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       z-index: 100;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      backdrop-filter: blur(10px);
     }
     .logo {
       display: flex;
@@ -36,104 +34,170 @@
       color: #fff;
       text-decoration: none;
       font-weight: 600;
+      font-size: 0.95rem;
     }
-    .logo-icon { font-size: 1.5rem; }
-    .header-actions { display: flex; gap: 0.75rem; }
+    .logo-icon { font-size: 1.3rem; }
+    .header-actions { display: flex; gap: 0.5rem; }
     .btn {
       background: rgba(255,255,255,0.1);
       color: #fff;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.3rem;
     }
     .btn:hover { background: rgba(255,255,255,0.2); }
     .btn-primary { background: #e94560; }
     .btn-primary:hover { background: #ff6b6b; }
 
-    .video-section {
-      padding-top: 60px;
+    .main-content {
+      padding-top: 50px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
-    .video-container {
+
+    /* Media Container - fills available space */
+    .media-container {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #000;
       position: relative;
+      min-height: 60vh;
     }
+
+    /* Video Player */
     video {
       width: 100%;
-      max-height: calc(100vh - 200px);
+      height: 100%;
+      max-height: calc(100vh - 150px);
+      object-fit: contain;
       outline: none;
     }
-    .video-container img {
+
+    /* Image Display */
+    .media-container img {
       max-width: 100%;
-      max-height: calc(100vh - 200px);
+      max-height: calc(100vh - 150px);
+      object-fit: contain;
     }
-    .audio-player {
+
+    /* Audio Player */
+    .audio-wrapper {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 4rem 2rem;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      justify-content: center;
+      padding: 3rem;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      min-height: 50vh;
     }
-    .audio-icon { font-size: 5rem; margin-bottom: 2rem; }
-    audio { width: 100%; max-width: 500px; }
+    .audio-icon { font-size: 4rem; margin-bottom: 1.5rem; animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    audio {
+      width: 100%;
+      max-width: 500px;
+      height: 50px;
+    }
 
-    .info-section {
+    /* PDF Viewer */
+    .pdf-wrapper {
+      width: 100%;
+      height: calc(100vh - 150px);
+      background: #fff;
+    }
+    .pdf-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* HTML/Iframe Viewer */
+    .html-wrapper {
+      width: 100%;
+      height: calc(100vh - 150px);
+      background: #fff;
+    }
+    .html-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Embed Wrapper */
+    .embed-wrapper {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: #111;
+    }
+    .embed-wrapper iframe {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    /* Info Bar */
+    .info-bar {
       background: #0d0d12;
-      padding: 1.5rem 2rem;
+      padding: 1rem 1.5rem;
       border-top: 1px solid rgba(255,255,255,0.1);
     }
     .info-content {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .info-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
     }
     .info-title {
-      font-size: 1.25rem;
+      font-size: 1rem;
       font-weight: 600;
-      margin-bottom: 0.75rem;
       color: #fff;
     }
     .info-meta {
       display: flex;
-      gap: 1.5rem;
-      color: #888;
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
+      gap: 1rem;
+      color: #666;
+      font-size: 0.8rem;
     }
-    .info-meta span { display: flex; align-items: center; gap: 0.4rem; }
-    .share-row {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-    .share-url-box {
-      flex: 1;
-      min-width: 200px;
+    .share-box {
       display: flex;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
-    .share-url-box input {
-      flex: 1;
+    .share-box input {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.15);
       color: #4ecdc4;
-      padding: 0.6rem 0.8rem;
-      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      border-radius: 5px;
       font-family: monospace;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      width: 280px;
     }
 
+    /* Loader */
     .loader {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -145,8 +209,7 @@
       z-index: 1000;
     }
     .spinner {
-      width: 50px;
-      height: 50px;
+      width: 40px; height: 40px;
       border: 3px solid rgba(255,255,255,0.1);
       border-top-color: #e94560;
       border-radius: 50%;
@@ -154,8 +217,9 @@
       margin-bottom: 1rem;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader p { color: #888; }
+    .loader p { color: #666; font-size: 0.9rem; }
 
+    /* Error */
     .error-page {
       min-height: 100vh;
       display: flex;
@@ -165,46 +229,27 @@
       text-align: center;
       padding: 2rem;
     }
-    .error-page h1 { color: #e94560; margin-bottom: 1rem; font-size: 2rem; }
-    .error-page p { color: #888; margin-bottom: 1.5rem; }
+    .error-page h1 { color: #e94560; margin-bottom: 1rem; }
+    .error-page p { color: #666; margin-bottom: 1rem; }
     .error-page a { color: #4ecdc4; }
 
-    .pdf-viewer {
-      flex: 1;
-      display: flex;
-      align-items: stretch;
-    }
-    .pdf-viewer iframe {
-      width: 100%;
-      height: calc(100vh - 200px);
-      border: none;
-    }
-
+    /* Notification */
     .notification {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 20px; right: 20px;
       background: #00b894;
       color: white;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
       display: none;
       z-index: 1001;
-      animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      font-size: 0.9rem;
     }
 
-    .powered-by {
-      text-align: center;
-      padding: 1rem;
-      color: #555;
-      font-size: 0.8rem;
+    @media (max-width: 600px) {
+      .share-box input { width: 180px; }
+      .info-content { flex-direction: column; align-items: flex-start; }
     }
-    .powered-by a { color: #888; text-decoration: none; }
-    .powered-by a:hover { color: #fff; }
   </style>
 </head>
 <body>
@@ -225,27 +270,23 @@
       </div>
     </header>
 
-    <div class="video-section">
-      <div class="video-container" id="mediaPlayer"></div>
+    <div class="main-content">
+      <div class="media-container" id="mediaContainer"></div>
 
-      <div class="info-section">
+      <div class="info-bar">
         <div class="info-content">
-          <h1 class="info-title" id="mediaTitle">Media File</h1>
-          <div class="info-meta">
-            <span id="mediaType">📁 File</span>
-            <span id="mediaDate"></span>
-          </div>
-          <div class="share-row">
-            <div class="share-url-box">
-              <input type="text" id="shareUrl" readonly>
-              <button class="btn" onclick="copyUrl()">📋 Copy</button>
+          <div class="info-left">
+            <div class="info-title" id="mediaTitle">Media</div>
+            <div class="info-meta">
+              <span id="mediaType">📁 File</span>
+              <span id="mediaSize"></span>
             </div>
           </div>
+          <div class="share-box">
+            <input type="text" id="shareUrl" readonly onclick="this.select()">
+            <button class="btn" onclick="copyUrl()">📋 Copy</button>
+          </div>
         </div>
-      </div>
-
-      <div class="powered-by">
-        <a href="/">Powered by Forensic Capture - EVIDENTIA Platform</a>
       </div>
     </div>
   </div>
@@ -260,6 +301,23 @@
     let currentFileUrl = null;
     let currentFileName = null;
 
+    // File type mappings
+    const FILE_TYPES = {
+      video: ['mp4', 'mov', 'webm', 'avi', 'mkv', 'm4v', 'ogv'],
+      audio: ['mp3', 'wav', 'm4a', 'ogg', 'aac', 'flac', 'wma'],
+      image: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'],
+      pdf: ['pdf'],
+      html: ['html', 'htm'],
+      document: ['doc', 'docx', 'txt', 'rtf', 'csv', 'xls', 'xlsx', 'ppt', 'pptx']
+    };
+
+    function getFileCategory(ext) {
+      for (const [category, extensions] of Object.entries(FILE_TYPES)) {
+        if (extensions.includes(ext.toLowerCase())) return category;
+      }
+      return 'other';
+    }
+
     async function loadMedia() {
       const pathParts = window.location.pathname.split('/');
       const slug = pathParts[pathParts.length - 1].replace('.html', '');
@@ -270,16 +328,19 @@
       }
 
       try {
-        const extensions = ['mp4', 'mov', 'webm', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'ogg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt'];
+        // Get all possible extensions
+        const allExts = Object.values(FILE_TYPES).flat();
         let fileUrl = null;
         let fileExt = null;
+        let fileSize = 0;
 
-        for (const ext of extensions) {
+        for (const ext of allExts) {
           const testUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${FOLDER}/${slug}.${ext}`;
           const response = await fetch(testUrl, { method: 'HEAD' });
           if (response.ok) {
             fileUrl = testUrl;
             fileExt = ext;
+            fileSize = parseInt(response.headers.get('content-length') || '0');
             break;
           }
         }
@@ -292,62 +353,108 @@
         currentFileUrl = fileUrl;
         currentFileName = `${slug}.${fileExt}`;
 
-        // Update page info
-        const mediaPlayer = document.getElementById('mediaPlayer');
-        const mediaTitle = document.getElementById('mediaTitle');
-        const mediaType = document.getElementById('mediaType');
-        const mediaDate = document.getElementById('mediaDate');
+        const container = document.getElementById('mediaContainer');
+        const category = getFileCategory(fileExt);
 
-        mediaDate.textContent = `📅 ${new Date().toLocaleDateString()}`;
+        // Update info
         document.getElementById('shareUrl').value = window.location.href;
+        document.getElementById('mediaSize').textContent = formatSize(fileSize);
 
-        // Render based on file type
-        if (['mp4', 'mov', 'webm', 'avi', 'mkv'].includes(fileExt)) {
-          document.title = `Video - ${slug} | Forensic Capture`;
-          mediaTitle.textContent = `Video Recording (${slug})`;
-          mediaType.textContent = '🎬 Video';
-          mediaPlayer.innerHTML = `
-            <video controls autoplay playsinline>
-              <source src="${fileUrl}" type="video/${fileExt === 'mov' ? 'quicktime' : fileExt}">
-              Your browser does not support video playback.
-            </video>
-          `;
-        } else if (['mp3', 'wav', 'm4a', 'ogg'].includes(fileExt)) {
-          document.title = `Audio - ${slug} | Forensic Capture`;
-          mediaTitle.textContent = `Audio Recording (${slug})`;
-          mediaType.textContent = '🎵 Audio';
-          mediaPlayer.innerHTML = `
-            <div class="audio-player">
-              <div class="audio-icon">🎵</div>
-              <audio controls autoplay>
-                <source src="${fileUrl}" type="audio/${fileExt === 'mp3' ? 'mpeg' : fileExt}">
-              </audio>
-            </div>
-          `;
-        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExt)) {
-          document.title = `Image - ${slug} | Forensic Capture`;
-          mediaTitle.textContent = `Image (${slug})`;
-          mediaType.textContent = '🖼️ Image';
-          mediaPlayer.innerHTML = `<img src="${fileUrl}" alt="Image">`;
-        } else if (fileExt === 'pdf') {
-          document.title = `PDF - ${slug} | Forensic Capture`;
-          mediaTitle.textContent = `PDF Document (${slug})`;
-          mediaType.textContent = '📄 PDF';
-          mediaPlayer.innerHTML = `
-            <div class="pdf-viewer">
-              <iframe src="${fileUrl}"></iframe>
-            </div>
-          `;
-        } else {
-          document.title = `File - ${slug} | Forensic Capture`;
-          mediaTitle.textContent = `File (${slug}.${fileExt})`;
-          mediaType.textContent = '📁 Document';
-          mediaPlayer.innerHTML = `
-            <div class="audio-player">
-              <div class="audio-icon">📄</div>
-              <p style="color:#888">Click download to view this file</p>
-            </div>
-          `;
+        // Render based on category
+        switch (category) {
+          case 'video':
+            document.title = `Video - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `Video Recording`;
+            document.getElementById('mediaType').textContent = '🎬 Video';
+            container.innerHTML = `
+              <video controls autoplay playsinline>
+                <source src="${fileUrl}">
+                Your browser does not support video.
+              </video>
+            `;
+            break;
+
+          case 'audio':
+            document.title = `Audio - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `Audio Recording`;
+            document.getElementById('mediaType').textContent = '🎵 Audio';
+            container.innerHTML = `
+              <div class="audio-wrapper">
+                <div class="audio-icon">🎵</div>
+                <audio controls autoplay>
+                  <source src="${fileUrl}">
+                  Your browser does not support audio.
+                </audio>
+              </div>
+            `;
+            break;
+
+          case 'image':
+            document.title = `Image - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `Image`;
+            document.getElementById('mediaType').textContent = '🖼️ Image';
+            container.innerHTML = `<img src="${fileUrl}" alt="Image" onclick="window.open('${fileUrl}', '_blank')">`;
+            break;
+
+          case 'pdf':
+            document.title = `PDF - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `PDF Document`;
+            document.getElementById('mediaType').textContent = '📄 PDF';
+            container.innerHTML = `
+              <div class="pdf-wrapper">
+                <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1"></iframe>
+              </div>
+            `;
+            break;
+
+          case 'html':
+            document.title = `Document - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `HTML Document`;
+            document.getElementById('mediaType').textContent = '🌐 HTML';
+            // Fetch HTML and render in iframe using srcdoc
+            const htmlResponse = await fetch(fileUrl);
+            const htmlContent = await htmlResponse.text();
+            container.innerHTML = `
+              <div class="html-wrapper">
+                <iframe srcdoc="${escapeHtml(htmlContent)}" sandbox="allow-scripts allow-same-origin"></iframe>
+              </div>
+            `;
+            break;
+
+          case 'document':
+            document.title = `Document - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `Document (${fileExt.toUpperCase()})`;
+            document.getElementById('mediaType').textContent = '📄 Document';
+            // For Office docs, try Google Docs viewer
+            if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExt)) {
+              container.innerHTML = `
+                <div class="pdf-wrapper">
+                  <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true"></iframe>
+                </div>
+              `;
+            } else {
+              // For text files, fetch and display
+              const textResponse = await fetch(fileUrl);
+              const textContent = await textResponse.text();
+              container.innerHTML = `
+                <div class="html-wrapper">
+                  <iframe srcdoc="<html><head><style>body{font-family:monospace;padding:2rem;white-space:pre-wrap;background:#1a1a2e;color:#eee;}</style></head><body>${escapeHtml(textContent)}</body></html>"></iframe>
+                </div>
+              `;
+            }
+            break;
+
+          default:
+            document.title = `File - ${slug} | Forensic Capture`;
+            document.getElementById('mediaTitle').textContent = `File (${fileExt})`;
+            document.getElementById('mediaType').textContent = '📁 File';
+            container.innerHTML = `
+              <div class="audio-wrapper">
+                <div class="audio-icon">📄</div>
+                <p style="color:#888;margin-bottom:1rem">Preview not available for this file type</p>
+                <button class="btn btn-primary" onclick="downloadFile()">⬇️ Download File</button>
+              </div>
+            `;
         }
 
         // Show content
@@ -360,12 +467,28 @@
       }
     }
 
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatSize(bytes) {
+      if (!bytes || bytes === 0) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
     function showError(message) {
       document.getElementById('loader').innerHTML = `
         <div class="error-page">
-          <h1>⚠️ Media Not Found</h1>
+          <h1>⚠️ Not Found</h1>
           <p>${message}</p>
-          <p><a href="/">← Back to Forensic Capture</a></p>
+          <a href="/">← Back to Forensic Capture</a>
         </div>
       `;
     }
@@ -375,16 +498,15 @@
         const a = document.createElement('a');
         a.href = currentFileUrl;
         a.download = currentFileName;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
       }
     }
 
     function shareLink() {
       if (navigator.share) {
-        navigator.share({
-          title: document.title,
-          url: window.location.href
-        });
+        navigator.share({ title: document.title, url: window.location.href });
       } else {
         copyUrl();
       }
@@ -394,14 +516,14 @@
       const input = document.getElementById('shareUrl');
       input.select();
       document.execCommand('copy');
-      showNotification('📋 Link copied to clipboard!');
+      showNotification('📋 Link copied!');
     }
 
     function showNotification(message) {
       const notif = document.getElementById('notification');
       notif.textContent = message;
       notif.style.display = 'block';
-      setTimeout(() => { notif.style.display = 'none'; }, 3000);
+      setTimeout(() => { notif.style.display = 'none'; }, 2500);
     }
 
     loadMedia();
