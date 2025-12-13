@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forensic Capture - EVIDENTIA</title>
+  <meta name="description" content="Secure HTML evidence capture and sharing platform">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      min-height: 100vh;
+    }
+    .header {
+      background: rgba(0,0,0,0.3);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .logo h1 {
+      font-size: 1.25rem;
+      background: linear-gradient(135deg, #e94560, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo span { color: #888; font-size: 0.85rem; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      min-height: calc(100vh - 80px);
+    }
+    .panel {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      background: rgba(0,0,0,0.2);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .panel-header h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #ccc;
+    }
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn:hover { background: #ff6b6b; transform: translateY(-1px); }
+    .btn-secondary { background: rgba(255,255,255,0.1); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+    .btn-success { background: #00b894; }
+    .btn-success:hover { background: #00d9a5; }
+    textarea {
+      flex: 1;
+      background: #0d1117;
+      color: #c9d1d9;
+      border: none;
+      padding: 1rem;
+      font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      resize: none;
+      outline: none;
+      line-height: 1.6;
+    }
+    iframe {
+      flex: 1;
+      border: none;
+      background: white;
+    }
+    .share-box {
+      background: rgba(0,0,0,0.3);
+      padding: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: none;
+    }
+    .share-box.active { display: block; }
+    .share-box label {
+      display: block;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.5rem;
+    }
+    .share-input {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .share-input input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #4ecdc4;
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: monospace;
+    }
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #00b894;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .recent-captures {
+      margin-top: 1rem;
+    }
+    .recent-captures h3 {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 0.5rem;
+    }
+    .capture-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .capture-item {
+      background: rgba(0,0,0,0.2);
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .capture-item a {
+      color: #4ecdc4;
+      text-decoration: none;
+    }
+    .capture-item a:hover { text-decoration: underline; }
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚖️</div>
+      <div>
+        <h1>Forensic Capture</h1>
+        <span>EVIDENTIA Platform</span>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-secondary" onclick="loadFromStorage()">📂 Load from Storage</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📝 HTML Code Editor</h2>
+        <div class="toolbar">
+          <button class="btn btn-secondary" onclick="clearEditor()">Clear</button>
+          <button class="btn" onclick="updatePreview()">▶ Preview</button>
+        </div>
+      </div>
+      <textarea id="htmlCode" placeholder="Paste your HTML code here...
+
+Example:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Evidence Report</title>
+</head>
+<body>
+  <h1>Report Title</h1>
+  <p>Content here...</p>
+</body>
+</html>"></textarea>
+      <div class="share-box" id="shareBox">
+        <label>📎 Shareable Link (copy and share):</label>
+        <div class="share-input">
+          <input type="text" id="shareUrl" readonly>
+          <button class="btn" onclick="copyUrl()">📋 Copy</button>
+          <button class="btn btn-secondary" onclick="openInNewTab()">↗ Open</button>
+        </div>
+        <div class="recent-captures" id="recentCaptures" style="display:none">
+          <h3>Recent Captures</h3>
+          <div class="capture-list" id="captureList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>👁️ Live Preview</h2>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="saveAndShare()">💾 Save & Get Link</button>
+        </div>
+      </div>
+      <iframe id="preview"></iframe>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://tvecnfdqakrevzaeifpk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2ZWNuZmRxYWtyZXZ6YWVpZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzODIwNjQsImV4cCI6MjA2Mzk1ODA2NH0.q-8ukkJZ4FGSbZyEYp0letP-S58hC2PA6lUOWUH9H2Y';
+    const BUCKET = 'court-evidence';
+    const FOLDER = 'forensic-captures';
+
+    // Load recent captures from localStorage
+    let recentCaptures = JSON.parse(localStorage.getItem('forensicCaptures') || '[]');
+
+    function updatePreview() {
+      const code = document.getElementById('htmlCode').value;
+      const iframe = document.getElementById('preview');
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(code);
+      doc.close();
+    }
+
+    function generateSlug() {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let slug = '';
+      for (let i = 0; i < 8; i++) {
+        slug += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return slug;
+    }
+
+    async function saveAndShare() {
+      const code = document.getElementById('htmlCode').value;
+      if (!code.trim()) {
+        showNotification('Please enter HTML code first', 'error');
+        return;
+      }
+
+      const slug = generateSlug();
+      const filename = `${slug}.html`;
+      const filepath = `${FOLDER}/${filename}`;
+
+      try {
+        // Upload to Supabase
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filepath}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'text/html',
+            'x-upsert': 'true'
+          },
+          body: code
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+
+        // Generate shareable URL
+        const baseUrl = window.location.origin;
+        const shareableUrl = `${baseUrl}/v/${slug}`;
+
+        // Save to recent captures
+        recentCaptures.unshift({ slug, url: shareableUrl, date: new Date().toISOString() });
+        recentCaptures = recentCaptures.slice(0, 10); // Keep last 10
+        localStorage.setItem('forensicCaptures', JSON.stringify(recentCaptures));
+
+        // Show share URL
+        document.getElementById('shareUrl').value = shareableUrl;
+        document.getElementById('shareBox').classList.add('active');
+        updateRecentList();
+
+        showNotification('✅ Saved! Link ready to share');
+
+      } catch (error) {
+        console.error(error);
+        showNotification('Failed to save: ' + error.message, 'error');
+      }
+    }
+
+    function updateRecentList() {
+      if (recentCaptures.length === 0) return;
+
+      const list = document.getElementById('captureList');
+      const container = document.getElementById('recentCaptures');
+      container.style.display = 'block';
+
+      list.innerHTML = recentCaptures.map(c => `
+        <div class="capture-item">
+          <a href="${c.url}" target="_blank">${c.slug}</a>
+          <span style="color:#666">${new Date(c.date).toLocaleDateString()}</span>
+        </div>
+      `).join('');
+    }
+
+    async function loadFromStorage() {
+      const path = prompt('Enter file path from court-evidence bucket:\n(e.g., evidence-reports/20250919/file.html)');
+      if (!path) return;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`);
+        if (!response.ok) throw new Error('File not found');
+
+        const code = await response.text();
+        document.getElementById('htmlCode').value = code;
+        updatePreview();
+        showNotification('✅ File loaded');
+      } catch (error) {
+        showNotification('Failed to load: ' + error.message, 'error');
+      }
+    }
+
+    function clearEditor() {
+      document.getElementById('htmlCode').value = '';
+      const iframe = document.getElementById('preview');
+      iframe.contentDocument.body.innerHTML = '';
+    }
+
+    function copyUrl() {
+      const input = document.getElementById('shareUrl');
+      input.select();
+      document.execCommand('copy');
+      showNotification('📋 Link copied!');
+    }
+
+    function openInNewTab() {
+      const url = document.getElementById('shareUrl').value;
+      if (url) window.open(url, '_blank');
+    }
+
+    function showNotification(message, type = 'success') {
+      const notif = document.getElementById('notification');
+      notif.textContent = message;
+      notif.style.background = type === 'error' ? '#e94560' : '#00b894';
+      notif.style.display = 'block';
+      setTimeout(() => { notif.style.display = 'none'; }, 3000);
+    }
+
+    // Auto-preview on paste
+    document.getElementById('htmlCode').addEventListener('paste', () => {
+      setTimeout(updatePreview, 100);
+    });
+
+    // Initialize recent list
+    updateRecentList();
+  </script>
+</body>
+</html>
