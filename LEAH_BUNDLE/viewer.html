@@ -25,6 +25,7 @@
 
     body {
       display: flex;
+      flex-direction: column;
       height: 100vh;
       background: var(--grey-4);
       color: var(--black);
@@ -33,21 +34,23 @@
       font-size: 16px;
     }
 
-    /* ── GOV.UK BLACK HEADER (sidebar top) ── */
-    .gov-header {
-      background: var(--black);
-      color: var(--white);
-      padding: 12px 20px;
-      font-size: 14px;
-      font-weight: 700;
-      border-bottom: 3px solid var(--focus);   /* gold underline */
+    /* ── FULL-WIDTH HERO BANNER ── */
+    .hero-banner {
       flex-shrink: 0;
+      width: 100%;
+      border-bottom: 3px solid var(--focus);   /* gold underline */
     }
-    .gov-header .case-ref {
-      font-weight: 400;
-      color: #a9acae;
-      font-size: 12px;
-      margin-top: 2px;
+    .hero-img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ── TWO-PANEL ROW ── */
+    .panels-row {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
     }
 
     /* ── LEFT PANEL ── */
@@ -187,7 +190,7 @@
     /* A4 FIT: shrink image so full page is visible in viewport */
     .evidence-img {
       display: block;
-      max-height: calc(100vh - 68px);   /* viewport minus top padding */
+      max-height: calc(100vh - 240px);  /* viewport minus hero + padding */
       max-width: calc(100vw - 380px);   /* viewport minus sidebar + padding */
       width: auto;
       height: auto;
@@ -223,18 +226,23 @@
 </head>
 <body>
 
+<!-- HERO BANNER -->
+<div class="hero-banner">
+    <img src="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/MONA/JUSTICE%20MINDS%20FORENSIC%20INTELLIGENCE%20(Website).png" class="hero-img" alt="Justice Minds Forensic Intelligence Ltd">
+</div>
+
+<!-- TWO-PANEL ROW -->
+<div class="panels-row">
+
 <!-- LEFT: CONTROLS -->
 <div class="toc-panel">
-    <div class="gov-header">
-      Essential Evidence Bundle
-      <div class="case-ref">111 pages &middot; Leah Farrer</div>
-    </div>
     <div class="search-box">
         <label class="search-label" for="searchInput">Search</label>
         <input type="text" id="searchInput" placeholder="e.g. complaint, safeguarding…">
         <div id="matchCount"></div>
     </div>
     <div class="stats-bar">
+        <span>Leah Farrer</span>
         <span id="statsPages"></span>
         <span id="statsWords"></span>
     </div>
@@ -243,6 +251,8 @@
 
 <!-- RIGHT: VIEWER -->
 <div class="viewer-panel" id="viewerPanel"></div>
+
+</div><!-- end panels-row -->
 
 <div class="kb">↑↓ scroll &nbsp;|&nbsp; type to search</div>
 
