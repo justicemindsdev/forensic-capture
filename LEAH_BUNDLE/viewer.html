@@ -6,79 +6,231 @@
 <title>Forensic Evidence Viewer — ESSENTIAL EVIDENCE BUNDLE</title>
 <script src="data.js"></script>
 <style>
-    /* ── FORENSIC UI THEME ── */
-    :root { --bg: #1a1a1a; --panel: #252525; --accent: #00ff00; --text: #e0e0e0; }
-    * { box-sizing: border-box; }
-    body { margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text);
-           font-family: 'Courier New', monospace; overflow: hidden; }
+    /* ════════════════════════════════════════════════════
+       GOV.UK DESIGN SYSTEM — Evidence Viewer
+       ════════════════════════════════════════════════════ */
+    :root {
+      --black:   #0b0c0c;
+      --white:   #ffffff;
+      --grey-1:  #6f777b;   /* secondary text       */
+      --grey-2:  #bfc1c3;   /* input borders        */
+      --grey-3:  #dee0e2;   /* dividers             */
+      --grey-4:  #f8f8f8;   /* page bg              */
+      --blue:    #1d70b8;   /* links                */
+      --focus:   #ffdd00;   /* focus / highlight    */
+      --red:     #d4351c;
+    }
 
-    /* ── LEFT PANEL: TOC & SEARCH ── */
-    .toc-panel { width: 350px; background: var(--panel); border-right: 1px solid #444;
-                 display: flex; flex-direction: column; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .search-box { padding: 16px 18px; background: #000; border-bottom: 1px solid #444; }
-    .search-label { font-size: 11px; color: #888; margin-bottom: 4px; letter-spacing: .08em; }
+    body {
+      display: flex;
+      height: 100vh;
+      background: var(--grey-4);
+      color: var(--black);
+      font-family: "GDS Transport", "Helvetica Neue", Arial, sans-serif;
+      overflow: hidden;
+      font-size: 16px;
+    }
 
-    input { width: 100%; background: #333; border: 1px solid #555; color: #fff; padding: 10px;
-            font-family: inherit; font-size: 14px; outline: none; }
-    input:focus { border-color: var(--accent); }
+    /* ── GOV.UK BLACK HEADER (sidebar top) ── */
+    .gov-header {
+      background: var(--black);
+      color: var(--white);
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      border-bottom: 3px solid var(--focus);   /* gold underline */
+      flex-shrink: 0;
+    }
+    .gov-header .case-ref {
+      font-weight: 400;
+      color: #a9acae;
+      font-size: 12px;
+      margin-top: 2px;
+    }
 
-    #matchCount { font-size: 11px; color: var(--accent); margin-top: 5px; text-align: right; }
+    /* ── LEFT PANEL ── */
+    .toc-panel {
+      width: 320px;
+      background: var(--white);
+      border-right: 1px solid var(--grey-3);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
 
-    .stats-bar { padding: 8px 18px; background: #1e1e1e; border-bottom: 1px solid #333;
-                 font-size: 10px; color: #666; display: flex; justify-content: space-between; }
+    /* Search block */
+    .search-box {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--grey-3);
+      flex-shrink: 0;
+    }
+    .search-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 6px;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: var(--white);
+      border: 2px solid var(--grey-2);
+      color: var(--black);
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 16px;
+      outline: none;
+      border-radius: 0;
+    }
+    input[type="text"]:focus {
+      outline: 3px solid var(--focus);
+      outline-offset: 0;
+      border-color: var(--black);
+    }
+    #matchCount {
+      font-size: 13px;
+      color: var(--blue);
+      font-weight: 700;
+      margin-top: 6px;
+      min-height: 18px;
+    }
 
+    /* Stats strip */
+    .stats-bar {
+      padding: 7px 20px;
+      background: var(--grey-4);
+      border-bottom: 1px solid var(--grey-3);
+      font-size: 12px;
+      color: var(--grey-1);
+      display: flex;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    /* TOC list */
     .toc-list { overflow-y: auto; flex: 1; }
-    .toc-item { padding: 12px 18px; border-bottom: 1px solid #2a2a2a; cursor: pointer;
-                transition: background 0.15s; display: flex; justify-content: space-between;
-                align-items: center; }
-    .toc-item:hover { background: #333; }
-    .toc-item.active { background: #2d2d2d; border-left: 3px solid var(--accent); }
-    .toc-item.has-match { border-left: 3px solid #ff0; }
 
-    .page-num { color: var(--accent); font-weight: bold; font-size: 13px; }
-    .page-title { font-size: 11px; color: #888; margin-top: 3px; max-width: 260px;
-                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .match-badge { background: #ff0; color: #000; font-size: 10px; font-weight: bold;
-                   padding: 1px 6px; border-radius: 3px; }
+    .toc-item {
+      padding: 10px 16px 10px 20px;
+      border-bottom: 1px solid var(--grey-3);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.12s;
+      border-left: 4px solid transparent;
+    }
+    .toc-item:hover          { background: #f0f2f4; }
+    .toc-item.active         { background: #eef2f7; border-left-color: var(--blue); }
+    .toc-item.has-match      { border-left-color: var(--focus); background: #fffdf0; }
+    .toc-item.active.has-match { border-left-color: var(--blue); background: #eef2f7; }
 
-    /* ── RIGHT PANEL: VIEWER ── */
-    .viewer-panel { flex: 1; overflow-y: auto; padding: 30px; position: relative;
-                    scroll-behavior: smooth; text-align: center; background: #111; }
+    .page-num {
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .page-title {
+      font-size: 12px;
+      color: var(--grey-1);
+      margin-top: 2px;
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .match-badge {
+      background: var(--focus);
+      color: var(--black);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
 
-    .page-wrapper { position: relative; display: inline-block; margin-bottom: 40px; }
+    /* ── RIGHT PANEL: PAGE VIEWER ── */
+    .viewer-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 28px;
+      background: #e8eaec;
+      text-align: center;
+      scroll-behavior: smooth;
+    }
 
-    .page-label { color: var(--accent); font-size: 11px; letter-spacing: .1em;
-                  text-align: left; margin-bottom: 6px; }
+    .page-wrapper {
+      display: inline-block;
+      margin-bottom: 28px;
+      text-align: left;
+    }
 
-    .evidence-page { position: relative; display: inline-block;
-                     box-shadow: 0 4px 24px rgba(0,0,0,0.6); background: #fff; }
+    .page-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--grey-1);
+      margin-bottom: 6px;
+      letter-spacing: .01em;
+    }
 
-    .evidence-img { display: block; max-width: 100%; height: auto; }
+    /* The page container — highlight boxes position relative to this */
+    .evidence-page {
+      position: relative;
+      display: inline-block;
+      background: var(--white);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    }
 
-    /* ── HIGHLIGHT OVERLAY ── */
-    .highlight-box { position: absolute; background: rgba(255,255,0,0.35);
-                     border: 2px solid rgba(255,50,0,0.7); pointer-events: none; z-index: 10;
-                     animation: pulse 2s infinite; border-radius: 2px; }
-    @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+    /* A4 FIT: shrink image so full page is visible in viewport */
+    .evidence-img {
+      display: block;
+      max-height: calc(100vh - 68px);   /* viewport minus top padding */
+      max-width: calc(100vw - 380px);   /* viewport minus sidebar + padding */
+      width: auto;
+      height: auto;
+    }
+
+    /* ── HIGHLIGHT OVERLAY — GOV.UK focus yellow ── */
+    .highlight-box {
+      position: absolute;
+      background: rgba(255, 221, 0, 0.45);
+      border: 2px solid rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+      z-index: 10;
+      animation: hl-pulse 2s ease-in-out infinite;
+    }
+    @keyframes hl-pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
     /* ── SCROLLBARS ── */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #111; }
-    ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+    ::-webkit-scrollbar            { width: 8px; }
+    ::-webkit-scrollbar-track      { background: var(--white); }
+    ::-webkit-scrollbar-thumb      { background: var(--grey-2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover{ background: var(--grey-1); }
 
     /* ── KEYBOARD HINT ── */
-    .kb { position: fixed; bottom: 12px; right: 18px; font-size: 10px; color: #444;
-          pointer-events: none; z-index: 100; }
+    .kb {
+      position: fixed; bottom: 10px; right: 16px;
+      font-size: 11px; color: var(--grey-1);
+      pointer-events: none; z-index: 100;
+      background: rgba(255,255,255,0.88);
+      padding: 4px 10px; border-radius: 3px;
+      border: 1px solid var(--grey-3);
+    }
 </style>
 </head>
 <body>
 
 <!-- LEFT: CONTROLS -->
 <div class="toc-panel">
+    <div class="gov-header">
+      Essential Evidence Bundle
+      <div class="case-ref">111 pages &middot; Leah Farrer</div>
+    </div>
     <div class="search-box">
-        <div class="search-label">FORENSIC SEARCH //</div>
-        <input type="text" id="searchInput" placeholder="Search exact phrase…">
+        <label class="search-label" for="searchInput">Search</label>
+        <input type="text" id="searchInput" placeholder="e.g. complaint, safeguarding…">
         <div id="matchCount"></div>
     </div>
     <div class="stats-bar">
@@ -128,7 +280,7 @@
 
             const label = document.createElement('div');
             label.className = 'page-label';
-            label.textContent = '── PAGE ' + item.page + ' ──';
+            label.textContent = 'Page ' + item.page + ' of ' + EVIDENCE_DATA.length;
 
             const pageDiv = document.createElement('div');
             pageDiv.className = 'evidence-page';
