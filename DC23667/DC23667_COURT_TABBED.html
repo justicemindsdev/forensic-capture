@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DC23667 — Court Package | Rebuttal &amp; Forensic Determination</title>
+<style>
+  /* ── RESET ── */
+  *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+
+  /* ── PAGE ── A4 width, court margins ── */
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 2;
+    color: #000;
+    background: #fff;
+    max-width: 794px;       /* 210mm A4 */
+    margin: 0 auto;
+    padding: 50px 70px 50px 60px;  /* top right bottom left — asymmetric as per court standard */
+  }
+  @media print {
+    body { padding: 35px 60px 35px 50px; }
+    .no-print { display:none !important; }
+    .exhibit-body { display:block !important; }
+  }
+
+  /* ── COURT HEADER ── centred, bold, underlined title ── */
+  .court-title {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .court-title h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    text-decoration: underline;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .court-title .case-ref {
+    font-size: 12pt;
+    font-weight: bold;
+  }
+  .court-title .sub {
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  /* ── PARTIES TABLE ── */
+  .parties-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 12pt;
+  }
+  .parties-table td {
+    padding: 3px 8px;
+    vertical-align: top;
+  }
+  .parties-table .label {
+    font-weight: bold;
+    width: 140px;
+    border-bottom: 1px solid #000;
+  }
+  .parties-table .value {
+    border-bottom: 1px solid #000;
+  }
+
+  /* ── SECTION HEADING — bold, underlined, left-aligned ── */
+  .section-heading {
+    font-size: 12pt;
+    font-weight: bold;
+    text-decoration: underline;
+    margin: 28px 0 10px;
+  }
+
+  /* ── SUB-HEADING — bold italic ── */
+  .sub-heading {
+    font-size: 12pt;
+    font-weight: bold;
+    font-style: italic;
+    margin: 18px 0 6px;
+    padding-left: 20px;
+  }
+
+  /* ── NUMBERED PARAGRAPHS — 48pt hanging indent ── */
+  .para {
+    text-align: justify;
+    padding-left: 48px;
+    text-indent: -48px;
+    margin-bottom: 2px;  /* line-height:2 handles spacing */
+  }
+  .para .num {
+    font-weight: bold;
+  }
+
+  /* ── QUOTE BLOCKS — indented both sides, italic, justified ── */
+  .quote-block {
+    margin: 8px 0;
+    padding: 0 48px;
+    font-style: italic;
+    text-align: justify;
+  }
+
+  /* ── EXHIBIT PANELS — collapsible, black header ── */
+  .exhibit-ref {
+    color: #000;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .exhibit-ref:hover { text-decoration: underline; }
+
+  .exhibit-panel {
+    border: 1px solid #000;
+    margin: 10px 0 14px;
+  }
+  .exhibit-header {
+    background: #000;
+    color: #fff;
+    padding: 6px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 11pt;
+    font-weight: bold;
+  }
+  .exhibit-header .close-btn {
+    font-size: 14pt;
+    cursor: pointer;
+    color: #fff;
+  }
+  .exhibit-body {
+    display: none;
+    padding: 14px 16px;
+    font-size: 11pt;
+    line-height: 1.7;
+    background: #fff;
+  }
+  .exhibit-body.open { display: block; }
+
+  .exhibit-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0;
+  }
+  .exhibit-body table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #000;
+    vertical-align: top;
+  }
+  .exhibit-body table .lbl {
+    font-weight: bold;
+    width: 120px;
+  }
+  .exhibit-body table a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  /* ── EVIDENCE INDEX TABLE ── */
+  .index-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 11pt;
+  }
+  .index-table th {
+    background: #f5f5f5;
+    font-weight: bold;
+    text-align: left;
+    padding: 6px 8px;
+    border: 1px solid #000;
+  }
+  .index-table td {
+    padding: 5px 8px;
+    border: 1px solid #000;
+    vertical-align: top;
+  }
+  .index-table a { color:#000; text-decoration:underline; }
+
+  /* ── STAT TABLE ── */
+  .stat-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 20px;
+    font-size: 11pt;
+  }
+  .stat-table th {
+    background: #f5f5f5;
+    text-align: left;
+    padding: 6px 8px;
+    border: 1px solid #000;
+    font-weight: bold;
+  }
+  .stat-table td {
+    padding: 5px 8px;
+    border: 1px solid #000;
+    vertical-align: top;
+  }
+  .stat-table .val {
+    font-weight: bold;
+    text-align: right;
+    width: 140px;
+  }
+
+  /* ── SIGNATURE BLOCK ── */
+  .sig-block {
+    margin-top: 60px;
+  }
+  .sig-line {
+    border-bottom: 1px solid #000;
+    width: 260px;
+    margin-top: 40px;
+  }
+  .sig-label {
+    font-size: 11pt;
+    margin-top: 4px;
+  }
+
+  /* ── PRINT BUTTONS ── */
+  .print-bar {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+  }
+  .print-bar button {
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    font-family: "Times New Roman", serif;
+    font-size: 11pt;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .print-bar button:hover { background: #333; }
+  @media print { .print-bar { display:none; } }
+</style>
+</head>
+<body>
+
+<!-- Print controls -->
+<div class="print-bar no-print">
+  <button onclick="window.print()">Print / PDF</button>
+  <button onclick="expandAll()">Expand All Exhibits</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     COURT HEADER
+     ══════════════════════════════════════════ -->
+<div class="court-title">
+  <h1>Statement of Rebuttal &amp; Forensic Determination</h1>
+  <div class="case-ref">Case Ref: DC23667</div>
+  <div class="sub">In the Matter of: Exclusion from the University of Law<br>
+  Support to Study Stage 3 Process</div>
+  <div class="sub" style="margin-top:6px; font-size:10pt;">
+    Prepared: 2026-02-04 &nbsp;|&nbsp; EVIDENTIA Forensic Intelligence
+  </div>
+</div>
+
+<table class="parties-table">
+  <tr><td class="label">Appellant</td><td class="value">Ben Mak &nbsp; (ben.mak71@law.ac.uk)</td></tr>
+  <tr><td class="label">Respondent</td><td class="value">The University of Law Limited &nbsp; 14 Store Street, London WC1E 7DE</td></tr>
+  <tr><td class="label">Decision Maker</td><td class="value">Rachel Edge &nbsp; Secretary, Stage 3 Support to Study Panel</td></tr>
+  <tr><td class="label">Documents</td><td class="value">DC23667 Inbox Export (1,837 pages) &nbsp;|&nbsp; Engagement PDF (214 pages)</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════
+     PART I — INTRODUCTION &amp; DECLARATION
+     ══════════════════════════════════════════ -->
+<div class="section-heading">PART I — Introduction &amp; Declaration</div>
+
+<div class="para">
+  <span class="num">1.</span> This document constitutes a formal rebuttal of the claims made by the Respondent
+  in the letter dated 13 May 2024, authored by Rachel Edge, Secretary of the Stage 3 Support to Study Panel,
+  and a forensic determination identifying seven previously unacknowledged threads of institutional failure
+  within the email record.
+</div>
+
+<div class="para">
+  <span class="num">2.</span> This rebuttal is compiled from timestamped email records exported from the Appellant's
+  institutional inbox (Case Ref DC23667, 1,837 pages) and the Appellant's sent-items engagement record (214 pages).
+  Every claim made by the Respondent is set against a specific, dated, quoted piece of evidence.
+  The evidence links contained herein direct to highlighted screenshots of the source pages, hosted at the
+  address set out in Part IV of this document.
+</div>
+
+<div class="para">
+  <span class="num">3.</span> No claim in this document is unsupported. Where the Appellant's evidence contradicts
+  a finding of the Panel, the contradiction is identified by reference to the specific page, date, and content
+  of the source material.
+</div>
+
+<div class="para">
+  <span class="num">4.</span> The Appellant states that the exclusion decision of 13 May 2024 was procedurally tainted,
+  that the claims of non-engagement are statistically false, that safeguarding disclosures were compartmentalised
+  away from the decision-making process, and that key members of the Panel held undisclosed conflicts of interest.
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART II — STATEMENT OF REBUTTAL
+     ══════════════════════════════════════════ -->
+<div class="section-heading">PART II — Statement of Rebuttal</div>
+
+<div class="sub-heading">A. Non-Engagement</div>
+
+<div class="para">
+  <span class="num">5.</span> The Respondent states: <em>"You did not engage with the course."</em>
+  This claim is made without citation of any specific evidence. The Appellant's email record demonstrates
+  the following: ben.mak71@law.ac.uk appears on 855 pages of the DC23667 inbox export;
+  93 emails were SENT by the Appellant in the engagement PDF; 81 unique addresses were contacted;
+  25 or more contacts were made to @law.ac.uk addresses. The claim of non-engagement is contradicted by volume.
+  See Exhibit A.
+</div>
+
+<!-- Exhibit A -->
+<div class="exhibit-panel" id="exA">
+  <div class="exhibit-header" onclick="toggleExhibit('exA')">
+    <span>EXHIBIT A — R-001: Non-Engagement (General)</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exA-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>You did not engage with the course.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2023-09-14 to 2024-06-06</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>855 pages | 93 sent | 81 addresses | 25+ @law.ac.uk contacts</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Equality Act 2010 s.20(4) — anticipatory duty. UoL Support to Study Policy — 'support students experiencing difficulties'. Burden of proof on institution to demonstrate failure AFTER adequate support offered.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM FAILS</strong> — no evidence base cited by Panel. Contradicted by volume.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0025_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">6.</span> The Respondent states: <em>"You did not liaise with your PSL Salome Verrell
+  and the Student Journey Advice team."</em> Salome Verrell appears on 13 pages of DC23667. Seven emails
+  were received FROM Salome; six were sent TO Salome. On 26 April 2024 — 17 days before the decision —
+  Salome sent the Revision Hotline Schedule directly to the Appellant. On 2 November 2023, Salome replied
+  to the Appellant in correspondence captioned <em>RE: Hey</em>. On 7 December 2023, Debbie Shortland CC'd
+  Salome on correspondence captioned <em>meet Ben for course support</em>. The channel was open.
+  See Exhibit B.
+</div>
+
+<!-- Exhibit B -->
+<div class="exhibit-panel" id="exB">
+  <div class="exhibit-header" onclick="toggleExhibit('exB')">
+    <span>EXHIBIT B — R-002: Non-Engagement — PSL Liaison</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exB-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>You did not liaise with your PSL Salome Verrell and the Student Journey Advice team.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2023-11-02 to 2024-04-26</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>13 contact pages | 7 from | 6 to | last contact 26 Apr 2024</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>UoL Support to Study Procedures — Action Plan item states student must 'liaise with PSL'. Liaison is bidirectional. Failure to initiate direct individual outreach re: Action Plan sits with the institution.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM FAILS</strong> — Salome was in active contact. No documented individual follow-up on Action Plan item by PSL.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0153_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">7.</span> The Respondent states: <em>"you did not attend any on-campus teaching sessions,
+  nor did you engage with mock assessments."</em> Chris Hooley (academic coach) appears on 23 pages of DC23667;
+  20 emails were received FROM Hooley. Course materials were delivered throughout the period.
+  A Pro Bono marketing email was sent to the Appellant on 13 May 2024 — the same day as the decision letter.
+  Online engagement constitutes engagement under the adjustment framework of the Equality Act 2010 s.20(3).
+  See Exhibit C.
+</div>
+
+<!-- Exhibit C -->
+<div class="exhibit-panel" id="exC">
+  <div class="exhibit-header" onclick="toggleExhibit('exC')">
+    <span>EXHIBIT C — R-003: Non-Engagement — Attendance</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exC-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>You did not attend any on-campus teaching sessions, nor did you engage with mock assessments.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2023-09-26 to 2024-04-22</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>23 coach pages | 20 from Hooley | 24 mock assessment emails received</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Equality Act 2010 s.20(3) — reasonable adjustments include 'changing assessment procedures or providing extra support'. Online engagement IS engagement under adjusted provisions.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM OVERSTATED</strong> — Physical non-attendance documented. But 'did not engage' is false.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0184_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">B. Progression</div>
+
+<div class="para">
+  <span class="num">8.</span> The Respondent states: <em>"There has been no progression since the first Support to Study
+  meeting. You did not address any of the actions in the Action Plan."</em> Action Plan item 3 required the
+  Appellant to review his ULIP with a DIS advisor. On or after 1 February 2024, Angele Venchard of the DIS
+  emailed the Appellant offering this review. The offer was initiated by the institution. No documented
+  follow-up was made when the appointment was not booked. The Appellant contacted the Disability Support
+  Service five times. See Exhibit D.
+</div>
+
+<!-- Exhibit D -->
+<div class="exhibit-panel" id="exD">
+  <div class="exhibit-header" onclick="toggleExhibit('exD')">
+    <span>EXHIBIT D — R-004: No Progression — Action Plan</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exD-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>There has been no progression. You did not address any of the actions in the Action Plan.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-02-01 to 2024-04-19</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>ULIP review offered by DIS | 11 DIS pages | 5 Venchard pages | Venchard initiated contact</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Action Plan item 3 was INITIATED by the institution. The institution's duty under s.20(4) was to follow up. No follow-up documented.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM PARTIALLY FAILS</strong> — Action 3 initiated by institution. No follow-up after offer.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0640_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">9.</span> The Respondent's assertion of no progression is measured solely against on-campus attendance.
+  During the same period, the Appellant was engaged with: Debbie Shortland (Designated Safeguarding Lead),
+  who made referrals to Westminster statutory services on 15 February 2024; Richard Jones at Shelter (10 pages
+  of correspondence); Stonewall Housing; and Survivors UK. Welfare, legal, and housing progression —
+  all directly affecting the Appellant's ability to engage with his course — were not considered by the Panel.
+  See Exhibit E.
+</div>
+
+<!-- Exhibit E -->
+<div class="exhibit-panel" id="exE">
+  <div class="exhibit-header" onclick="toggleExhibit('exE')">
+    <span>EXHIBIT E — R-005: No Progression — Welfare Track</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exE-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>There has been no progression since the first Support to Study meeting.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-02-15 to 2024-04-19</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>11 safeguarding pages | 10 Shelter pages | 2+ Stonewall | Survivors UK active</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Support to Study Policy scope: 'students experiencing difficulties to engage with their course.' Panel applied a single-axis measure.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM FAILS</strong> — Progression occurred on welfare, legal, and housing tracks.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0540_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">C. Procedural Matters</div>
+
+<div class="para">
+  <span class="num">10.</span> The Respondent states that the appeal email of 12 March 2024 <em>"was delivered into
+  the junk boxes of the respective colleagues."</em> This email appears in the DC23667 inbox export — the very
+  archive from which the Respondent compiled its case. It was CC'd to ben.mak71@law.ac.uk. It was received
+  and stored. Furthermore, DC23667 page 526 records that the institution was aware of quarantine issues on
+  its Exchange system. The "junk" defence is introduced for the first time in the letter that constitutes
+  the exclusion decision. See Exhibit F.
+</div>
+
+<!-- Exhibit F -->
+<div class="exhibit-panel" id="exF">
+  <div class="exhibit-header" onclick="toggleExhibit('exF')">
+    <span>EXHIBIT F — R-006: Email Delivery — "Junk" Defence</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exF-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>The email was delivered into the junk boxes of the respective colleagues.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-03-12</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>6 recipients | CC'd to student's UoL inbox | 62 days before decision | IT aware of quarantine pattern</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Natural justice — audi altera partem. The institution's IT infrastructure failure cannot be attributed to the student.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM FAILS</strong> — Email was received. 'Junk' excuse introduced only at decision stage.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0388_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">11.</span> The Respondent states that the Panel <em>"concluded that it does not contain any relevant
+  information or detail of how the Action Plan has been implemented."</em> The email in question (DC23667
+  pages 388–390) is a three-page formal submission citing Equality Act 2010 sections 20(3) and 20(4);
+  twelve or more specific University of Law policy page references; formal questions requiring answers; and
+  specific procedural objections to the Stage 2 process. It raises safeguarding as an extenuating circumstance.
+  The Panel's reasoning for dismissal is not recorded. See Exhibit G.
+</div>
+
+<!-- Exhibit G -->
+<div class="exhibit-panel" id="exG">
+  <div class="exhibit-header" onclick="toggleExhibit('exG')">
+    <span>EXHIBIT G — R-007: Dismissal of Submission</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exG-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>The Panel concluded that it does not contain any relevant information.</em> — Rachel Edge, 13 May 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-03-12</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>3 pages | 2 Equality Act sections cited | 12+ policy page references | formal questions posed | 0 answers provided</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Procedural fairness requires submissions be engaged with on their merits. Dismissing an Equality Act submission without recorded reasoning is a procedural breach.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM FAILS</strong> — Dismissal without recorded reasoning is a procedural breach.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0389_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">12.</span> The Respondent states that the Stage 2 Review Meeting was scheduled for 7 March 2024
+  and that the Appellant <em>"did not respond to the invitation to this meeting and were not in attendance."</em>
+  The Appellant's appeal correspondence (DC23667 pages 388–389) states that no 15-minute meeting reminder
+  was sent, contrary to standard practice, and that the Appellant was at his computer at the time.
+  The Stage 2 meeting was held 20 days after a suicidal disclosure had been formally documented by the
+  Designated Safeguarding Lead. No welfare check was conducted before the meeting proceeded.
+  See Exhibit H.
+</div>
+
+<!-- Exhibit H -->
+<div class="exhibit-panel" id="exH">
+  <div class="exhibit-header" onclick="toggleExhibit('exH')">
+    <span>EXHIBIT H — R-008: Meeting Non-Attendance</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exH-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td><em>You did not respond to the invitation to this meeting and were not in attendance.</em> — Sandie Gaines, 18 Mar 2024</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-02-28 to 2024-03-07</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>0 reminders sent (vs standard) | 20 days post-suicidal disclosure | student at computer</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Equality Act s.20(4) anticipatory duty. Omitting the reminder during an active safeguarding case constitutes discriminatory impact regardless of intent.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>PROCEDURALLY TAINTED</strong> — Reminder omitted. Active safeguarding case. Decision made without welfare check.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0388_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">13.</span> The Stage 3 Notification was issued by Sandie Gaines on 18 March 2024 — six calendar days
+  after the appeal email was sent. The Stage 3 Notification makes no reference to the appeal having been
+  received or considered. The right to be heard before adverse action requires that a formal submission
+  citing Equality Act obligations be read before the process is escalated. Whether the appeal was in junk
+  or not, six days is insufficient time to discover, retrieve, read, and consider a three-page Equality Act
+  submission before escalating. See Exhibit I.
+</div>
+
+<!-- Exhibit I -->
+<div class="exhibit-panel" id="exI">
+  <div class="exhibit-header" onclick="toggleExhibit('exI')">
+    <span>EXHIBIT I — R-009: Escalation Timeline</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exI-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td>Stage 3 Notification issued 18 March 2024 — Sandie Gaines</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-03-12 to 2024-03-18</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>6 days between appeal and Stage 3 escalation | 0 reference to appeal in notification</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Right to be heard before adverse action. Either the appeal was not seen (IT failure) or it was seen and ignored (procedural breach). Either way, procedural fairness was not met.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>PROCEDURAL FAILURE</strong></td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0363_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">D. Safeguarding</div>
+
+<div class="para">
+  <span class="num">14.</span> On 15 February 2024, Debbie Shortland, the Designated Safeguarding Lead at the
+  University of Law, sent an URGENT email (DC23667 page 540) stating in material part: <em>"he has suicidal
+  thoughts... Ben stated that if this meeting was not held... he would end his life. We have made referrals
+  today to statutory health and safeguarding services in Westminster."</em> This disclosure does not appear
+  in any subsequent academic decision documentation. It does not feature in the Stage 2 meeting of
+  7 March 2024. It does not feature in the Stage 3 letter of 13 May 2024. See Exhibit J.
+</div>
+
+<!-- Exhibit J -->
+<div class="exhibit-panel" id="exJ">
+  <div class="exhibit-header" onclick="toggleExhibit('exJ')">
+    <span>EXHIBIT J — R-010: Safeguarding — Institutional Failure</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exJ-body">
+    <table>
+      <tr><td class="lbl">Their Claim</td><td>No safeguarding reference made in any Stage 2 or Stage 3 documentation</td></tr>
+      <tr><td class="lbl">Counter Date</td><td>2024-02-15 to 2024-03-07</td></tr>
+      <tr><td class="lbl">Metric</td><td><strong>20 days: disclosure to Stage 2 | 5 panel members | 0 safeguarding references | 0 welfare checks</strong></td></tr>
+      <tr><td class="lbl">Legal Basis</td><td>Mental Health Act 1983. Institution's duty of care. An URGENT safeguarding referral citing suicidal ideation MUST inform any subsequent academic decision. This is a baseline duty.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>INSTITUTIONAL SAFEGUARDING FAILURE</strong></td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0540_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="para">
+  <span class="num">15.</span> On 15 February 2024, the Appellant sent an email to mentalhealthservice@law.ac.uk
+  and Debbie.Shortland@law.ac.uk with the subject line <em>"Not one call or check in followg Repossesion."</em>
+  This was the same day that Shortland made the URGENT safeguarding referral. The Appellant was contacting
+  the institution's support services. See Exhibit K.
+</div>
+
+<!-- Exhibit K -->
+<div class="exhibit-panel" id="exK">
+  <div class="exhibit-header" onclick="toggleExhibit('exK')">
+    <span>EXHIBIT K — R-011: Duty of Care — Student Record</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exK-body">
+    <table>
+      <tr><td class="lbl">Appellant's Action</td><td>Email SENT by student TO institution support on 15 Feb 2024</td></tr>
+      <tr><td class="lbl">Significance</td><td>Same day as safeguarding referral. Correspondence existed in both directions simultaneously.</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>DIRECTLY CONTRADICTS</strong> the 'non-engagement' narrative.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0025_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">E. Aggregate Metrics</div>
+
+<div class="para">
+  <span class="num">16.</span> The Panel stated "no progression" and "no engagement" without citing a single piece
+  of evidence to support either assertion. The email record states otherwise: 93 emails sent; 84 received;
+  81 unique addresses contacted; 25 or more contacts to @law.ac.uk addresses. The burden of proof in
+  academic exclusion sits with the institution. See Exhibits L and M.
+</div>
+
+<!-- Exhibit L -->
+<div class="exhibit-panel" id="exL">
+  <div class="exhibit-header" onclick="toggleExhibit('exL')">
+    <span>EXHIBIT L — R-012: Aggregate Metrics — Engagement Volume</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exL-body">
+    <table>
+      <tr><td class="lbl">Emails SENT</td><td>93</td></tr>
+      <tr><td class="lbl">Emails RECEIVED</td><td>84</td></tr>
+      <tr><td class="lbl">Unique Addresses</td><td>81</td></tr>
+      <tr><td class="lbl">@law.ac.uk Contacts</td><td>25+</td></tr>
+      <tr><td class="lbl">Academic Coach Pages</td><td>23 (Hooley)</td></tr>
+      <tr><td class="lbl">IT ServiceDesk Pages</td><td>22</td></tr>
+      <tr><td class="lbl">DIS Pages</td><td>11</td></tr>
+      <tr><td class="lbl">Safeguarding Pages</td><td>11</td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>CLAIM FAILS ON VOLUME</strong></td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0143_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Exhibit M -->
+<div class="exhibit-panel" id="exM">
+  <div class="exhibit-header" onclick="toggleExhibit('exM')">
+    <span>EXHIBIT M — R-013: Timeline — Appeal to Exclusion</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exM-body">
+    <table>
+      <tr><td class="lbl">7 Mar 2024</td><td>Stage 2 meeting (Appellant absent)</td></tr>
+      <tr><td class="lbl">12 Mar 2024</td><td>Appeal email sent</td></tr>
+      <tr><td class="lbl">18 Mar 2024</td><td>Stage 3 Notification (6 days after appeal)</td></tr>
+      <tr><td class="lbl">17 Apr 2024</td><td>Stage 3 meeting</td></tr>
+      <tr><td class="lbl">13 May 2024</td><td>Exclusion letter</td></tr>
+      <tr><td class="lbl">Total</td><td><strong>67 days: absence to exclusion | 62 days: appeal ignored | 88 days: safeguarding to exclusion</strong></td></tr>
+      <tr><td class="lbl">Verdict</td><td><strong>PROCEDURAL ASYMMETRY</strong> — Escalation took days. Consideration of appeal: none.</td></tr>
+      <tr><td class="lbl">Source</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0084_evidence.png" target="_blank">[View Highlighted Source →]</a></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART III — FORENSIC DETERMINATION
+     ══════════════════════════════════════════ -->
+<div class="section-heading">PART III — Forensic Determination</div>
+
+<div class="para">
+  <span class="num">17.</span> This Part identifies seven previously unacknowledged evidentiary threads within the
+  email record. Each thread is a discrete chain of causation linking a specific individual or system to a
+  specific failure. The threads do not stand alone. They converge. Taken individually, each is serious.
+  Taken together, they constitute a pattern.
+</div>
+
+<div class="sub-heading">Thread 1 — Brian Lutchmiah: The Conflict That Decides Its Own Outcome</div>
+
+<div class="para">
+  <span class="num">18.</span> On or after 1 February 2024, Brian Lutchmiah, DIS Manager, promised ULIP support.
+  Angele Venchard emailed the Appellant stating: <em>"As promised by the DIS Manager, Brian, we are happy
+  to help going forward"</em> (DC23667 page 640). Brian Lutchmiah subsequently sat, without recusal, on the
+  Stage 2 panel. The Stage 3 letter states that the Appellant <em>"did not address any of the actions in the
+  Action Plan."</em> Action Plan item 3 was to review the ULIP with the DIS advisor — the very support
+  that Brian Lutchmiah had promised. He did not recuse himself. He did not flag the conflict.
+  See Exhibit N.
+</div>
+
+<!-- Exhibit N -->
+<div class="exhibit-panel" id="exN">
+  <div class="exhibit-header" onclick="toggleExhibit('exN')">
+    <span>EXHIBIT N — Thread 1: Brian Lutchmiah — Conflict of Interest</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exN-body">
+    <table>
+      <tr><td class="lbl">1 Feb 2024</td><td>Lutchmiah promises ULIP support via Venchard — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0640_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">7 Mar 2024</td><td>Lutchmiah sits on Stage 2 panel</td></tr>
+      <tr><td class="lbl">12 Mar 2024</td><td>Appeal sent TO Lutchmiah — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0388_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">13 May 2024</td><td>Stage 3 letter: Action Plan item 3 not completed</td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>The finding on Action Plan item 3 is tainted.</strong> Direct conflict of interest, undisclosed.</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">Thread 2 — Salome Verrell: The PSL Who Was Already Informed</div>
+
+<div class="para">
+  <span class="num">19.</span> Salome Verrell was CC'd on three support and safeguarding-adjacent emails between
+  November and December 2023 (Engagement PDF pages 121, 126, 127). She was aware of the Appellant's autism
+  diagnosis, his financial situation, and his need for course support. She sat on the Stage 2 panel in March
+  2024. She sent the Appellant a group email on 26 April 2024. The claim that the Appellant <em>"did not
+  liaise with his PSL"</em> is directly contradicted by her own correspondence record.
+  See Exhibit O.
+</div>
+
+<!-- Exhibit O -->
+<div class="exhibit-panel" id="exO">
+  <div class="exhibit-header" onclick="toggleExhibit('exO')">
+    <span>EXHIBIT O — Thread 2: Salome Verrell — Prior Knowledge</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exO-body">
+    <table>
+      <tr><td class="lbl">21 Nov 2023</td><td>CC'd on "Access to education" — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0127_SHORTLAND_CC_SALOME.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">23 Nov 2023</td><td>CC'd on "Meeting Scheduling" — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0126_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">7 Dec 2023</td><td>CC'd on "meet Ben for course support" — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0121_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">26 Apr 2024</td><td>Sends group email to Appellant — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0153_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>The liaison claim is unsustainable.</strong> CC'd on safeguarding correspondence, emailed Appellant 17 days before exclusion.</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">Thread 3 — Megan Liskevich: The Mental Health Advisor Who Did Not Speak</div>
+
+<div class="para">
+  <span class="num">20.</span> Megan Liskevich, Mental Health Advisor, was CC'd on correspondence referencing the
+  Appellant's circumstances on 7 December 2023. On 15 February 2024, the Designated Safeguarding Lead
+  documented an URGENT suicidal disclosure. Twenty days later, Megan Liskevich sat on the Stage 2 panel.
+  She did not raise the disclosure. She did not request a welfare check. She did not pause the proceedings.
+  See Exhibit P.
+</div>
+
+<!-- Exhibit P -->
+<div class="exhibit-panel" id="exP">
+  <div class="exhibit-header" onclick="toggleExhibit('exP')">
+    <span>EXHIBIT P — Thread 3: Megan Liskevich — Duty of Care Breach</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exP-body">
+    <table>
+      <tr><td class="lbl">7 Dec 2023</td><td>CC'd on course support correspondence — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0121_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">15 Feb 2024</td><td>Shortland URGENT safeguarding email — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0540_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">7 Mar 2024</td><td>Sits on Stage 2 panel. Suicidal disclosure 20 days old. Not raised.</td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>This is a failure of the specific duty held by her role.</strong> The MHA did not perform the function for which she was present.</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">Thread 4 — The Same-Day Paradox</div>
+
+<div class="para">
+  <span class="num">21.</span> On 10 May 2024, Teaching Quality Evaluation sent the Appellant a reminder to submit
+  feedback on his modules. On 13 May 2024 at 15:04, Pro Bono (London) emailed the Appellant advertising
+  summer opportunities. On 13 May 2024, Rachel Edge sent the exclusion letter. The exclusion was not
+  communicated across the institution before it was enacted. See Exhibit Q.
+</div>
+
+<!-- Exhibit Q -->
+<div class="exhibit-panel" id="exQ">
+  <div class="exhibit-header" onclick="toggleExhibit('exQ')">
+    <span>EXHIBIT Q — Thread 4: Same-Day Paradox</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exQ-body">
+    <table>
+      <tr><td class="lbl">10 May 2024</td><td>Module evaluation reminder sent — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0095_MODULE_EVAL_3_DAYS.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">13 May 2024</td><td>Pro Bono summer opportunities email — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0083_SAME_DAY_PROBONO.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">13 May 2024</td><td>Exclusion letter — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0084_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>The process was not coordinated. It was localised to the Panel.</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">Thread 5 — The Exchange System</div>
+
+<div class="para">
+  <span class="num">22.</span> The institution's Exchange system (ulaw365.onmicrosoft.com) generated documented
+  Undeliverable bounces in January and February 2024. A quarantine filter was known to be misfiring on
+  SharePoint links. The appeal email, sent to six recipients on this same system in March 2024, was
+  attributed to the student as a failure to engage. The email exists in the institution's own archive.
+  See Exhibit R.
+</div>
+
+<!-- Exhibit R -->
+<div class="exhibit-panel" id="exR">
+  <div class="exhibit-header" onclick="toggleExhibit('exR')">
+    <span>EXHIBIT R — Thread 5: Exchange System — Infrastructure Failure</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exR-body">
+    <table>
+      <tr><td class="lbl">22 Jan 2024</td><td>Undeliverable bounce via ulaw365 — <span style="font-style:italic">Engagement PDF P95</span></td></tr>
+      <tr><td class="lbl">4 Feb 2024</td><td>Two further bounces — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0065_UNDELIVERABLE.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">22 Feb 2024</td><td>Quarantine awareness documented — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0526_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">12 Mar 2024</td><td>Appeal email: all 6 inboxes → junk. On documented-failing system.</td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>The "junk" defence is an infrastructure failure owned by the institution, not the student.</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">Thread 6 — Five of Five</div>
+
+<div class="para">
+  <span class="num">23.</span> The appeal email of 12 March 2024 was sent TO: Jane Chappell, Salome Verrell,
+  Megan Liskevich, Brian Lutchmiah, and Sandie Gaines. These are the Chair, the PSL, the MHA, the DIS Manager,
+  and the Dean. The recipients are the decision-makers. The email is in the DC23667 archive. It was received.
+  It was stored. The claim is that it was never read. See Exhibit S.
+</div>
+
+<!-- Exhibit S -->
+<div class="exhibit-panel" id="exS">
+  <div class="exhibit-header" onclick="toggleExhibit('exS')">
+    <span>EXHIBIT S — Thread 6: Five of Five — All Decision-Makers Received Appeal</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exS-body">
+    <table>
+      <tr><td class="lbl">Recipients</td><td>Jane Chappell (Chair), Salome Verrell (PSL), Megan Liskevich (MHA), Brian Lutchmiah (DIS), Sandie Gaines (Dean) — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0388_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">18 Mar 2024</td><td>Stage 3 Notification: no reference to appeal — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0363_evidence.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">13 May 2024</td><td>Stage 3 letter: "delivered into the junk boxes" — all five, simultaneously</td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>The right to be heard was not exercised. It was extinguished.</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sub-heading">Thread 7 — The 26-Day Silence</div>
+
+<div class="para">
+  <span class="num">24.</span> The Stage 3 meeting was held on 17 April 2024. The exclusion letter was dated
+  13 May 2024. Between those dates: twenty-six days of silence. No communication to the Appellant. No interim
+  letter. No acknowledgement that a decision was pending. No welfare check — the suicidal disclosure was
+  57 days old at that point. On 10 May 2024, the institution sent a module evaluation reminder. On 13 May,
+  it sent the exclusion letter. See Exhibit T.
+</div>
+
+<!-- Exhibit T -->
+<div class="exhibit-panel" id="exT">
+  <div class="exhibit-header" onclick="toggleExhibit('exT')">
+    <span>EXHIBIT T — Thread 7: The 26-Day Silence</span><span class="close-btn">&#9660;</span>
+  </div>
+  <div class="exhibit-body" id="exT-body">
+    <table>
+      <tr><td class="lbl">17 Apr 2024</td><td>Stage 3 meeting</td></tr>
+      <tr><td class="lbl">17 Apr – 13 May</td><td><strong>26 days.</strong> No communication. No welfare check.</td></tr>
+      <tr><td class="lbl">10 May 2024</td><td>Module evaluation reminder — <a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0095_MODULE_EVAL_3_DAYS.png" target="_blank">[Evidence →]</a></td></tr>
+      <tr><td class="lbl">13 May 2024</td><td>Exclusion letter — encrypted, password sent separately</td></tr>
+      <tr><td class="lbl">Finding</td><td><strong>Safeguarding and academic progression were treated as separate systems. They are not.</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PART IV — EVIDENCE INDEX
+     ══════════════════════════════════════════ -->
+<div class="section-heading">PART IV — Evidence Index</div>
+
+<div class="para">
+  <span class="num">25.</span> The following table sets out all highlighted source pages and documents
+  referenced in this submission. Each link directs to the highlighted screenshot hosted on the Respondent's
+  own institutional archive, copied to external storage for preservation.
+</div>
+
+<table class="index-table">
+  <tr><th>#</th><th>File</th><th>Source</th><th>Content</th><th>Link</th></tr>
+  <tr><td>1</td><td>P0083</td><td>DC23667</td><td>Pro Bono email — same day as exclusion</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0083_SAME_DAY_PROBONO.png" target="_blank">[View]</a></td></tr>
+  <tr><td>2</td><td>P0084</td><td>DC23667</td><td>Stage 3 decision letter (Rachel Edge)</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0084_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>3</td><td>P0095</td><td>DC23667</td><td>Module eval reminder — 3 days before exclusion</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0095_MODULE_EVAL_3_DAYS.png" target="_blank">[View]</a></td></tr>
+  <tr><td>4</td><td>P0153</td><td>DC23667</td><td>Salome Revision Hotline — 26 Apr 2024</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0153_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>5</td><td>P0363</td><td>DC23667</td><td>Stage 3 Notification (Sandie Gaines)</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0363_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>6</td><td>P0388</td><td>DC23667</td><td>Appeal email — 12 Mar 2024, all recipients</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0388_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>7</td><td>P0389</td><td>DC23667</td><td>Equality Act s.20(3)/s.20(4) citations</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0389_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>8</td><td>P0390</td><td>DC23667</td><td>Safeguarding ref 28 Feb + formal questions</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0390_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>9</td><td>P0481</td><td>DC23667</td><td>Absence reminder — 29 Feb 2024</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0481_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>10</td><td>P0526</td><td>DC23667</td><td>Quarantine awareness documented</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0526_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>11</td><td>P0540</td><td>DC23667</td><td>Shortland URGENT safeguarding — 15 Feb</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0540_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>12</td><td>P0640</td><td>DC23667</td><td>Venchard ULIP review offer</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0640_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>13</td><td>P0679</td><td>DC23667</td><td>Appellant's account — intermission pressure</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/P0679_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>14</td><td>ENG P25</td><td>Engagement</td><td>SENT to MH service + Shortland — 15 Feb</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0025_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>15</td><td>ENG P65</td><td>Engagement</td><td>Undeliverable bounce — ulaw365</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0065_UNDELIVERABLE.png" target="_blank">[View]</a></td></tr>
+  <tr><td>16</td><td>ENG P67</td><td>Engagement</td><td>Second undeliverable bounce</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0067_UNDELIVERABLE.png" target="_blank">[View]</a></td></tr>
+  <tr><td>17</td><td>ENG P77</td><td>Engagement</td><td>MH service reply — meeting attendance</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0077_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>18</td><td>ENG P102</td><td>Engagement</td><td>MH service — pre-approved concessions</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0102_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>19</td><td>ENG P112</td><td>Engagement</td><td>SENT to MH service — meeting morning</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0112_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>20</td><td>ENG P121</td><td>Engagement</td><td>Shortland — meet Ben (CC Salome, Megan)</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0121_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>21</td><td>ENG P126</td><td>Engagement</td><td>Shortland — meeting scheduling</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0126_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>22</td><td>ENG P127</td><td>Engagement</td><td>Shortland — access to education (CC Salome)</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0127_SHORTLAND_CC_SALOME.png" target="_blank">[View]</a></td></tr>
+  <tr><td>23</td><td>ENG P139</td><td>Engagement</td><td>Salome Verrell — RE: Hey</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0139_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>24</td><td>ENG P141</td><td>Engagement</td><td>Hooley — RE: Checking in</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0141_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>25</td><td>ENG P143</td><td>Engagement</td><td>SENT to Shortland + DIS</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0143_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>26</td><td>ENG P145</td><td>Engagement</td><td>Receipt to Shortland + DIS</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0145_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>27</td><td>ENG P147</td><td>Engagement</td><td>Application to Student Info</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0147_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>28</td><td>ENG P157</td><td>Engagement</td><td>Hooley — First day back 26 Sep</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0157_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>29</td><td>ENG P169</td><td>Engagement</td><td>SENT — Thank you to Helene Richman</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0169_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>30</td><td>ENG P184</td><td>Engagement</td><td>Hooley — WS2 Slide + AC appointments</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0184_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>31</td><td>ENG P188</td><td>Engagement</td><td>SENT — DSA Application to DIS</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0188_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>32</td><td>ENG P190</td><td>Engagement</td><td>SENT — RE: URGENT to Victoria Reese</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/ENG_P0190_evidence.png" target="_blank">[View]</a></td></tr>
+  <tr><td>33</td><td>CSV</td><td>—</td><td>Full rebuttal in structured CSV format</td><td><a href="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/UNI%20OF%20LAW/DC23667_EVIDENCE_HIGHLIGHTS/DC23667_REBUTTAL_LEGAL.csv" target="_blank">[Download]</a></td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════
+     PART V — KEY STATISTICS
+     ══════════════════════════════════════════ -->
+<div class="section-heading">PART V — Key Statistics</div>
+
+<div class="para">
+  <span class="num">26.</span> The following tables set out the material statistics derived from the email record.
+</div>
+
+<table class="stat-table">
+  <tr><th colspan="2">Institutional Response Metrics</th></tr>
+  <tr><td>Days between suicidal disclosure and Stage 2 decision</td><td class="val">20</td></tr>
+  <tr><td>Days between appeal email and Stage 3 escalation</td><td class="val">6</td></tr>
+  <tr><td>Days appeal email existed before exclusion decision</td><td class="val">62</td></tr>
+  <tr><td>Days of silence between Stage 3 meeting and exclusion letter</td><td class="val">26</td></tr>
+  <tr><td>Days between safeguarding disclosure and exclusion</td><td class="val">88</td></tr>
+  <tr><td>Formal questions posed in appeal — answers provided</td><td class="val">0</td></tr>
+  <tr><td>Individual contact attempts by staff (Feb–Apr 2024, documented)</td><td class="val">0</td></tr>
+  <tr><td>Panel members at Stage 2</td><td class="val">5</td></tr>
+  <tr><td>Panel members who checked safeguarding status (evidenced)</td><td class="val">0</td></tr>
+  <tr><td>Appeal recipients who were also decision-makers</td><td class="val">5 of 5</td></tr>
+  <tr><td>Meeting reminders sent before Stage 2</td><td class="val">0</td></tr>
+</table>
+
+<table class="stat-table">
+  <tr><th colspan="2">Student Activity Metrics</th></tr>
+  <tr><td>Emails SENT by Appellant (engagement PDF)</td><td class="val">93</td></tr>
+  <tr><td>Emails RECEIVED by Appellant</td><td class="val">84</td></tr>
+  <tr><td>Unique addresses contacted</td><td class="val">81</td></tr>
+  <tr><td>Contacts to @law.ac.uk addresses (sent)</td><td class="val">25+</td></tr>
+  <tr><td>Pages referencing ben.mak71 in DC23667</td><td class="val">855</td></tr>
+  <tr><td>Academic coach (Hooley) contact pages</td><td class="val">23</td></tr>
+  <tr><td>IT ServiceDesk contact pages</td><td class="val">22</td></tr>
+  <tr><td>DIS service contact pages</td><td class="val">11</td></tr>
+  <tr><td>Safeguarding contact pages</td><td class="val">11</td></tr>
+  <tr><td>Shelter (legal housing) contact pages</td><td class="val">10</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════
+     PART VI — RELIEF SOUGHT &amp; CLOSING
+     ══════════════════════════════════════════ -->
+<div class="section-heading">PART VI — Relief Sought &amp; Closing Statement</div>
+
+<div class="para">
+  <span class="num">27.</span> On the basis of the evidence set out in this document, the Appellant submits that
+  the exclusion decision of 13 May 2024 is vitiated on the following grounds:
+</div>
+
+<div class="para">
+  <span class="num">28.</span> <em>Finding 1 — Conflict of Interest.</em> Brian Lutchmiah initiated the ULIP support offer
+  and subsequently sat on the panel that declared it was not acted upon, without recusal. The finding on
+  Action Plan item 3 is tainted.
+</div>
+
+<div class="para">
+  <span class="num">29.</span> <em>Finding 2 — Prior Knowledge.</em> Salome Verrell was CC'd on three support and
+  safeguarding-related emails. The liaison claim is directly contradicted by her own correspondence record
+  and is unsustainable.
+</div>
+
+<div class="para">
+  <span class="num">30.</span> <em>Finding 3 — Duty of Care Breach.</em> The Mental Health Advisor sat on a panel 20 days
+  after a suicidal disclosure had been formally documented. She did not raise it. This is a failure of the
+  specific duty held by her role.
+</div>
+
+<div class="para">
+  <span class="num">31.</span> <em>Finding 4 — Institutional Incoherence.</em> The exclusion was not communicated across
+  the institution before it was enacted. The process was localised to the Panel.
+</div>
+
+<div class="para">
+  <span class="num">32.</span> <em>Finding 5 — Infrastructure Failure Misattributed.</em> The institution's Exchange system
+  was documented as failing in January and February 2024. The "junk" defence is an infrastructure failure
+  owned by the institution, not the student.
+</div>
+
+<div class="para">
+  <span class="num">33.</span> <em>Finding 6 — Audi Altera Partem.</em> A formal appeal citing Equality Act obligations was
+  sent to every member of the decision-making panel and the Dean. It existed for 62 days before the exclusion
+  decision. It was dismissed without recorded reasoning. The right to be heard was extinguished.
+</div>
+
+<div class="para">
+  <span class="num">34.</span> <em>Finding 7 — Safeguarding Compartmentalisation.</em> A suicidal disclosure was made on
+  15 February 2024, formally, in writing, with referrals to statutory services. It did not appear in any
+  subsequent academic decision documentation. Safeguarding and academic progression were treated as separate
+  systems. They are not.
+</div>
+
+<div class="para">
+  <span class="num">35.</span> The Appellant requests that the exclusion decision be set aside on the ground that it was
+  reached in breach of procedural fairness, in breach of the institution's duty of care, and in breach of
+  the Equality Act 2010. The Appellant further requests that the matter be referred to an independent review
+  panel, that a full safeguarding review be conducted, and that the Appellant's registration be reinstated
+  pending that review.
+</div>
+
+<!-- ══════════════════════════════════════════
+     STATEMENT OF TRUTH
+     ══════════════════════════════════════════ -->
+<div class="section-heading">Statement of Truth</div>
+
+<div class="para">
+  <span class="num">36.</span> I, Ben Mak, state that the facts set out in this document are true to the best of
+  my knowledge, information, and belief. The evidence on which this statement is based is set out herein and
+  in the exhibits attached. Every piece of evidence cited is sourced from the Respondent's own records.
+</div>
+
+<div class="sig-block">
+  <div class="sig-line"></div>
+  <div class="sig-label">Signature &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+  <div class="sig-line" style="margin-top:36px"></div>
+  <div class="sig-label">Witness &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+</div>
+
+<div style="margin-top:40px; font-size:10pt; color:#000; border-top:1px solid #000; padding-top:8px;">
+  EVIDENTIA — Forensic Evidence Compilation &nbsp;|&nbsp; Case Ref: DC23667 &nbsp;|&nbsp; 2026-02-04<br>
+  33 source pages | 13 rebuttal points | 7 forensic threads | Exhibits A–T
+</div>
+
+<!-- ── JS ── -->
+<script>
+function toggleExhibit(id) {
+  var body = document.getElementById(id + '-body');
+  body.classList.toggle('open');
+}
+function expandAll() {
+  document.querySelectorAll('.exhibit-body').forEach(function(b) { b.classList.add('open'); });
+}
+</script>
+</body>
+</html>
