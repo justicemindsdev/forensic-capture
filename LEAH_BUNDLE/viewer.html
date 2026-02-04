@@ -78,7 +78,7 @@
 <div class="toc-panel">
     <div class="search-box">
         <div class="search-label">FORENSIC SEARCH //</div>
-        <input type="text" id="searchInput" placeholder="Search exact phrase…" oninput="performSearch()">
+        <input type="text" id="searchInput" placeholder="Search exact phrase…">
         <div id="matchCount"></div>
     </div>
     <div class="stats-bar">
@@ -133,7 +133,7 @@
             const pageDiv = document.createElement('div');
             pageDiv.className = 'evidence-page';
             pageDiv.id = 'page-' + item.page;
-            pageDiv.innerHTML = '<img src="' + item.image + '" class="evidence-img" loading="lazy">';
+            pageDiv.innerHTML = '<img src="' + item.image + '" class="evidence-img">';
 
             wrapper.appendChild(label);
             wrapper.appendChild(pageDiv);
@@ -222,6 +222,9 @@
                     .scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     });
+
+    // ── 5. Wire search input (must be inside IIFE scope) ──
+    document.getElementById('searchInput').addEventListener('input', performSearch);
 
     function escHtml(s) {
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
