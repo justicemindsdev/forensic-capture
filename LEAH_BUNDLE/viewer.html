@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forensic Evidence Viewer — ESSENTIAL EVIDENCE BUNDLE</title>
+<script src="data.js"></script>
+<style>
+    /* ── FORENSIC UI THEME ── */
+    :root { --bg: #1a1a1a; --panel: #252525; --accent: #00ff00; --text: #e0e0e0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text);
+           font-family: 'Courier New', monospace; overflow: hidden; }
+
+    /* ── LEFT PANEL: TOC & SEARCH ── */
+    .toc-panel { width: 350px; background: var(--panel); border-right: 1px solid #444;
+                 display: flex; flex-direction: column; }
+
+    .search-box { padding: 16px 18px; background: #000; border-bottom: 1px solid #444; }
+    .search-label { font-size: 11px; color: #888; margin-bottom: 4px; letter-spacing: .08em; }
+
+    input { width: 100%; background: #333; border: 1px solid #555; color: #fff; padding: 10px;
+            font-family: inherit; font-size: 14px; outline: none; }
+    input:focus { border-color: var(--accent); }
+
+    #matchCount { font-size: 11px; color: var(--accent); margin-top: 5px; text-align: right; }
+
+    .stats-bar { padding: 8px 18px; background: #1e1e1e; border-bottom: 1px solid #333;
+                 font-size: 10px; color: #666; display: flex; justify-content: space-between; }
+
+    .toc-list { overflow-y: auto; flex: 1; }
+    .toc-item { padding: 12px 18px; border-bottom: 1px solid #2a2a2a; cursor: pointer;
+                transition: background 0.15s; display: flex; justify-content: space-between;
+                align-items: center; }
+    .toc-item:hover { background: #333; }
+    .toc-item.active { background: #2d2d2d; border-left: 3px solid var(--accent); }
+    .toc-item.has-match { border-left: 3px solid #ff0; }
+
+    .page-num { color: var(--accent); font-weight: bold; font-size: 13px; }
+    .page-title { font-size: 11px; color: #888; margin-top: 3px; max-width: 260px;
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .match-badge { background: #ff0; color: #000; font-size: 10px; font-weight: bold;
+                   padding: 1px 6px; border-radius: 3px; }
+
+    /* ── RIGHT PANEL: VIEWER ── */
+    .viewer-panel { flex: 1; overflow-y: auto; padding: 30px; position: relative;
+                    scroll-behavior: smooth; text-align: center; background: #111; }
+
+    .page-wrapper { position: relative; display: inline-block; margin-bottom: 40px; }
+
+    .page-label { color: var(--accent); font-size: 11px; letter-spacing: .1em;
+                  text-align: left; margin-bottom: 6px; }
+
+    .evidence-page { position: relative; display: inline-block;
+                     box-shadow: 0 4px 24px rgba(0,0,0,0.6); background: #fff; }
+
+    .evidence-img { display: block; max-width: 100%; height: auto; }
+
+    /* ── HIGHLIGHT OVERLAY ── */
+    .highlight-box { position: absolute; background: rgba(255,255,0,0.35);
+                     border: 2px solid rgba(255,50,0,0.7); pointer-events: none; z-index: 10;
+                     animation: pulse 2s infinite; border-radius: 2px; }
+    @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+    /* ── SCROLLBARS ── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+    /* ── KEYBOARD HINT ── */
+    .kb { position: fixed; bottom: 12px; right: 18px; font-size: 10px; color: #444;
+          pointer-events: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<!-- LEFT: CONTROLS -->
+<div class="toc-panel">
+    <div class="search-box">
+        <div class="search-label">FORENSIC SEARCH //</div>
+        <input type="text" id="searchInput" placeholder="Search exact phrase…" oninput="performSearch()">
+        <div id="matchCount"></div>
+    </div>
+    <div class="stats-bar">
+        <span id="statsPages"></span>
+        <span id="statsWords"></span>
+    </div>
+    <div class="toc-list" id="tocList"></div>
+</div>
+
+<!-- RIGHT: VIEWER -->
+<div class="viewer-panel" id="viewerPanel"></div>
+
+<div class="kb">↑↓ scroll &nbsp;|&nbsp; type to search</div>
+
+<script>
+(function () {
+    const viewer   = document.getElementById('viewerPanel');
+    const tocList  = document.getElementById('tocList');
+
+    // ── 1. INIT: render all pages + TOC ──
+    function init() {
+        if (typeof EVIDENCE_DATA === 'undefined') {
+            viewer.innerHTML = '<p style="color:#f44;font-size:18px;margin-top:100px">'
+                + 'Error: data.js not loaded. Run the Python baker first.</p>';
+            return;
+        }
+
+        let totalWords = 0;
+        EVIDENCE_DATA.forEach(item => {
+            totalWords += item.word_map.length;
+
+            // TOC entry
+            const tocItem = document.createElement('div');
+            tocItem.className = 'toc-item';
+            tocItem.id = 'toc-' + item.page;
+            tocItem.innerHTML =
+                '<div><span class="page-num">PAGE ' + item.page + '</span>' +
+                '<div class="page-title">' + escHtml(item.title) + '</div></div>' +
+                '<span class="match-badge" id="badge-' + item.page + '" style="display:none">0</span>';
+            tocItem.onclick = () => scrollToPage(item.page);
+            tocList.appendChild(tocItem);
+
+            // Viewer page
+            const wrapper  = document.createElement('div');
+            wrapper.className = 'page-wrapper';
+            wrapper.id = 'wrapper-' + item.page;
+
+            const label = document.createElement('div');
+            label.className = 'page-label';
+            label.textContent = '── PAGE ' + item.page + ' ──';
+
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'evidence-page';
+            pageDiv.id = 'page-' + item.page;
+            pageDiv.innerHTML = '<img src="' + item.image + '" class="evidence-img" loading="lazy">';
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(pageDiv);
+            viewer.appendChild(wrapper);
+        });
+
+        document.getElementById('statsPages').textContent = EVIDENCE_DATA.length + ' pages';
+        document.getElementById('statsWords').textContent  = totalWords.toLocaleString() + ' indexed words';
+    }
+
+    // ── 2. SCROLL ──
+    function scrollToPage(pageNum) {
+        const el    = document.getElementById('wrapper-' + pageNum);
+        const tocEl = document.getElementById('toc-' + pageNum);
+        document.querySelectorAll('.toc-item').forEach(i => i.classList.remove('active'));
+        if (tocEl) tocEl.classList.add('active');
+        if (el)    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── 3. SEARCH & HIGHLIGHT ──
+    function performSearch() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+
+        // clear old highlights + badges
+        document.querySelectorAll('.highlight-box').forEach(el => el.remove());
+        document.querySelectorAll('.toc-item').forEach(i => i.classList.remove('has-match'));
+        document.querySelectorAll('.match-badge').forEach(b => { b.style.display = 'none'; b.textContent = '0'; });
+
+        if (query.length < 2) {
+            document.getElementById('matchCount').textContent = '';
+            return;
+        }
+
+        let totalMatches  = 0;
+        let firstMatchPage = null;
+
+        EVIDENCE_DATA.forEach(item => {
+            const pageDiv = document.getElementById('page-' + item.page);
+            if (!pageDiv) return;
+
+            let pageMatches = 0;
+
+            item.word_map.forEach(word => {
+                if (word.text.toLowerCase().includes(query)) {
+                    pageMatches++;
+                    totalMatches++;
+                    if (!firstMatchPage) firstMatchPage = item.page;
+
+                    const hl = document.createElement('div');
+                    hl.className = 'highlight-box';
+                    hl.style.left   = word.x + '%';
+                    hl.style.top    = word.y + '%';
+                    hl.style.width  = word.w + '%';
+                    hl.style.height = word.h + '%';
+                    pageDiv.appendChild(hl);
+                }
+            });
+
+            if (pageMatches > 0) {
+                const badge = document.getElementById('badge-' + item.page);
+                const tocEl = document.getElementById('toc-'   + item.page);
+                if (badge) { badge.style.display = 'inline'; badge.textContent = pageMatches; }
+                if (tocEl)   tocEl.classList.add('has-match');
+            }
+        });
+
+        document.getElementById('matchCount').textContent =
+            totalMatches ? totalMatches + ' MATCH' + (totalMatches !== 1 ? 'ES' : '') + ' FOUND' : 'no matches';
+
+        if (firstMatchPage) scrollToPage(firstMatchPage);
+    }
+
+    // ── 4. KEYBOARD: Enter jumps to next match in TOC ──
+    document.getElementById('searchInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            const matches = [...document.querySelectorAll('.toc-item.has-match')];
+            if (!matches.length) return;
+            const active = document.querySelector('.toc-item.active');
+            let idx = active ? matches.indexOf(active) : -1;
+            idx = (idx + 1) % matches.length;
+            const target = matches[idx];
+            document.querySelectorAll('.toc-item').forEach(i => i.classList.remove('active'));
+            target.classList.add('active');
+            const pageNum = target.id.replace('toc-', '');
+            document.getElementById('wrapper-' + pageNum)
+                    .scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    init();
+})();
+</script>
+</body>
+</html>
