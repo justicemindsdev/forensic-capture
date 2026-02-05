@@ -217,7 +217,7 @@
     .ev-meta  { font-size: 11px; color: var(--grey-1); }
     .ev-rm    { background: none; border: none; color: var(--grey-1); font-size: 16px; cursor: pointer; line-height: 1; padding: 0 2px; }
     .ev-rm:hover { color: var(--red); }
-    .ev-query { font-weight: 700; color: var(--black); font-size: 12px; margin-bottom: 4px; }
+    .ev-notes { font-size: 9px; color: var(--grey-1); margin-top: 5px; line-height: 1.35; }
     .ev-thumb { position: relative; width: 100%; }
     .ev-thumb img { display: block; width: 100%; height: auto; }
     .ev-hl    { position: absolute; background: rgb(255, 221, 0); mix-blend-mode: darken; pointer-events: none; }
@@ -528,19 +528,13 @@
             const item = document.createElement('div');
             item.className = 'ev-item';
 
-            // header row: number + page + remove button
+            // header row: number + remove button
             const head = document.createElement('div');
             head.className = 'ev-item-head';
             head.innerHTML =
                 '<span class="ev-num">' + (idx + 1) + '</span>' +
-                '<span class="ev-meta">Page ' + entry.page + '</span>' +
                 '<button class="ev-rm" title="Remove">&times;</button>';
             head.querySelector('.ev-rm').addEventListener('click', () => removePin(idx));
-
-            // search term
-            const qDiv = document.createElement('div');
-            qDiv.className   = 'ev-query';
-            qDiv.textContent = entry.query;
 
             // thumbnail + highlight overlays
             const thumb = document.createElement('div');
@@ -565,9 +559,16 @@
             banner.innerHTML = '<span>' + escHtml(entry.query) + '</span><span>Exhibit ' + (idx + 1) + '</span>';
             thumb.appendChild(banner);
 
+            // notes line below thumbnail
+            const pd    = EVIDENCE_DATA.find(d => d.page === entry.page);
+            const docTitle = pd ? pd.title.replace(/\u2026$/, '') : 'Page ' + entry.page;
+            const notes = document.createElement('div');
+            notes.className = 'ev-notes';
+            notes.textContent = docTitle + ' | "' + entry.query + '" | Page: ' + entry.page + ' of ' + TOTAL_PAGES;
+
             item.appendChild(head);
-            item.appendChild(qDiv);
             item.appendChild(thumb);
+            item.appendChild(notes);
             evList.appendChild(item);
         });
     }
