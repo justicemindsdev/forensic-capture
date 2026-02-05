@@ -220,6 +220,15 @@
     .ev-thumb { position: relative; width: 100%; }
     .ev-thumb img { display: block; width: 100%; height: auto; }
     .ev-hl    { position: absolute; background: rgba(255, 221, 0, 0.5); pointer-events: none; }
+    .ev-banner {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 17px;
+      background: #0b0c0c;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 5px;
+      z-index: 5; pointer-events: none;
+    }
+    .ev-banner span { color: #fff; font-size: 7.5px; font-weight: 700; text-transform: uppercase; white-space: nowrap; letter-spacing: .04em; }
 
     /* ── SCROLLBARS ── */
     ::-webkit-scrollbar            { width: 7px; }
@@ -273,7 +282,7 @@
         <button class="ev-download" id="evDownload" disabled>DOWNLOAD</button>
     </div>
     <div class="ev-list" id="evList">
-        <div class="ev-empty">Check a highlighted page to pin it here.</div>
+        <div class="ev-empty">Hit ⊕ Copy on any page to save it here.</div>
     </div>
 </div>
 
@@ -549,6 +558,12 @@
                 thumb.appendChild(hl);
             });
 
+            // navy banner overlay on thumbnail
+            const banner = document.createElement('div');
+            banner.className = 'ev-banner';
+            banner.innerHTML = '<span>' + escHtml(entry.query) + '</span><span>Exhibit ' + (idx + 1) + '</span>';
+            thumb.appendChild(banner);
+
             item.appendChild(head);
             item.appendChild(qDiv);
             item.appendChild(thumb);
@@ -556,22 +571,23 @@
         });
     }
 
-    // ── 7. DOWNLOAD ALL ──
+    // ── 7. DOWNLOAD — print-to-PDF ──
     evDl.addEventListener('click', downloadAll);
 
-    function downloadAll() {
+    async function downloadAll() {
         if (!pinnedPages.length) return;
-        pinnedPages.forEach((entry, idx) => {
+        evDl.disabled    = true;
+        evDl.textContent = 'Generating…';
+
+        // render each exhibit to canvas with highlights baked in
+        const renderExhibit = (entry) => new Promise((resolve) => {
             const img = new Image();
-            img.src = entry.imageSrc;
             img.onload = () => {
                 const canvas  = document.createElement('canvas');
                 canvas.width  = img.naturalWidth;
                 canvas.height = img.naturalHeight;
                 const ctx     = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
-
-                // draw highlight rectangles
                 ctx.fillStyle = 'rgba(255, 221, 0, 0.5)';
                 entry.bboxes.forEach(bb => {
                     ctx.fillRect(
@@ -581,16 +597,98 @@
                         bb.h / 100 * canvas.height
                     );
                 });
-
-                // trigger download
-                const link    = document.createElement('a');
-                link.download = 'evidence_' + (idx + 1) + '_p' + entry.page + '_' + entry.query.replace(/[^a-z0-9]/gi, '_') + '.png';
-                link.href     = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                resolve(canvas.toDataURL('image/jpeg', 0.88));
             };
+            img.src = entry.imageSrc;
         });
+
+        const dataUrls = await Promise.all(pinnedPages.map(renderExhibit));
+
+        // ── TOC rows ──
+        const tocRows = pinnedPages.map((entry, i) => {
+            const pd    = EVIDENCE_DATA.find(d => d.page === entry.page);
+            const title = pd ? pd.title.replace(/\u2026$/, '') : 'Page ' + entry.page;
+            return '<tr>' +
+                '<td><strong>Exhibit ' + (i + 1) + '</strong></td>' +
+                '<td>' + escHtml(title) + '</td>' +
+                '<td>' + entry.page + '</td>' +
+                '<td style="font-size:10pt;font-style:italic;">"' + escHtml(entry.query) + '"</td>' +
+                '</tr>';
+        }).join('');
+
+        // ── exhibit pages ──
+        const exhibitPages = pinnedPages.map((entry, i) => {
+            const pd    = EVIDENCE_DATA.find(d => d.page === entry.page);
+            const title = pd ? pd.title.replace(/\u2026$/, '') : 'Page ' + entry.page;
+            return '<div class="page-break"></div>' +
+                '<div class="exhibit-banner">' +
+                    '<span>' + escHtml(entry.query.toUpperCase()) + '</span>' +
+                    '<span>EXHIBIT ' + (i + 1) + '</span>' +
+                '</div>' +
+                '<div class="exhibit-content">' +
+                    '<div class="meta-row"><strong>Document:</strong> ' + escHtml(title) + '</div>' +
+                    '<div class="meta-row"><strong>Page:</strong> ' + entry.page + '</div>' +
+                    '<div class="meta-row"><strong>Search Term:</strong> "' + escHtml(entry.query) + '"</div>' +
+                    '<div style="text-align:center;"><img src="' + dataUrls[i] + '" class="exhibit-img"></div>' +
+                '</div>';
+        }).join('');
+
+        // ── assemble HTML ──
+        var dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var html =
+'<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+'<title>Essential Evidence Bundle</title>' +
+'<style>' +
+'  @page { size: A4; margin: 0; }' +
+'  * { box-sizing: border-box; }' +
+'  body { margin:0; padding:0; font-family:"Times New Roman",serif; font-size:12pt; line-height:1.5; color:#000; }' +
+'  .toc-page { padding: 2.5cm 2cm 2cm; }' +
+'  .toc-title { text-align:center; margin-bottom:28px; }' +
+'  .toc-title h1 { font-size:20pt; margin-bottom:6px; }' +
+'  .toc-title .sub { font-size:13pt; font-weight:normal; color:#333; }' +
+'  .toc-title .dt  { font-size:10pt; color:#666; margin-top:8px; }' +
+'  .toc-title h3   { font-size:13pt; margin-bottom:10px; border-bottom:2px solid #000; padding-bottom:5px; text-align:left; }' +
+'  table { width:100%; border-collapse:collapse; }' +
+'  th,td { border:1px solid #000; padding:7px 9px; text-align:left; vertical-align:top; }' +
+'  th { background:#f5f5f5; font-size:10pt; }' +
+'  td { font-size:11pt; }' +
+'  .page-break { page-break-before:always; }' +
+'  .exhibit-banner { background:#0b0c0c; color:#fff; display:flex; justify-content:space-between; align-items:center; padding:10px 2cm; font-weight:bold; font-size:14pt; font-family:"Helvetica Neue",Arial,sans-serif; letter-spacing:.05em; }' +
+'  .exhibit-content { padding:1.2cm 2cm 1cm; }' +
+'  .meta-row { font-size:10.5pt; margin-bottom:3px; }' +
+'  .meta-row strong { display:inline-block; width:95px; }' +
+'  .exhibit-img { max-width:100%; max-height:22cm; box-shadow:0 1px 6px rgba(0,0,0,0.15); }' +
+'</style>' +
+'</head><body>' +
+'<div class="toc-page">' +
+'  <div class="toc-title">' +
+'    <h1>ESSENTIAL EVIDENCE BUNDLE</h1>' +
+'    <div class="sub">Leah Farrer v. Notting Hill Genesis</div>' +
+'    <div class="dt">Generated: ' + dateStr + '</div>' +
+'  </div>' +
+'  <h3>Index of Exhibits</h3>' +
+'  <table><thead><tr>' +
+'    <th style="width:70px;">Exhibit</th>' +
+'    <th>Document</th>' +
+'    <th style="width:42px;">Page</th>' +
+'    <th>Highlighted Text</th>' +
+'  </tr></thead><tbody>' + tocRows + '</tbody></table>' +
+'</div>' +
+exhibitPages +
+'</body></html>';
+
+        // open + auto-print
+        var blob     = new Blob([html], { type: 'text/html' });
+        var url      = URL.createObjectURL(blob);
+        var printWin = window.open(url, '_blank');
+        if (printWin) {
+            printWin.onload = function () {
+                setTimeout(function () { printWin.print(); }, 600);
+            };
+        }
+
+        evDl.disabled    = false;
+        evDl.textContent = 'DOWNLOAD';
     }
 
     // ── util ──
