@@ -6,18 +6,15 @@
 <title>Forensic Evidence Viewer — ESSENTIAL EVIDENCE BUNDLE</title>
 <script src="data.js"></script>
 <style>
-    /* ════════════════════════════════════════════════════
-       GOV.UK DESIGN SYSTEM — Evidence Viewer
-       ════════════════════════════════════════════════════ */
     :root {
       --black:   #0b0c0c;
       --white:   #ffffff;
-      --grey-1:  #6f777b;   /* secondary text       */
-      --grey-2:  #bfc1c3;   /* input borders        */
-      --grey-3:  #dee0e2;   /* dividers             */
-      --grey-4:  #f8f8f8;   /* page bg              */
-      --blue:    #1d70b8;   /* links                */
-      --focus:   #ffdd00;   /* focus / highlight    */
+      --grey-1:  #6f777b;
+      --grey-2:  #bfc1c3;
+      --grey-3:  #dee0e2;
+      --grey-4:  #f8f8f8;
+      --blue:    #1d70b8;
+      --focus:   #ffdd00;
       --red:     #d4351c;
     }
 
@@ -34,38 +31,24 @@
       font-size: 16px;
     }
 
-    /* ── FULL-WIDTH HERO BANNER ── */
-    .hero-banner {
-      flex-shrink: 0;
-      width: 100%;
-      border-bottom: 3px solid var(--focus);   /* gold underline */
-    }
-    .hero-img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
+    /* ── HERO ── */
+    .hero-banner { flex-shrink: 0; width: 100%; }
+    .hero-img    { display: block; width: 100%; height: auto; }
 
-    /* ── TWO-PANEL ROW ── */
-    .panels-row {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    /* ── THREE-PANEL ROW ── */
+    .panels-row { display: flex; flex: 1; overflow: hidden; }
 
-    /* ── LEFT PANEL ── */
+    /* ── LEFT: TOC ── */
     .toc-panel {
-      width: 320px;
+      width: 300px;
       background: var(--white);
       border-right: 1px solid var(--grey-3);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
     }
-
-    /* Search block */
     .search-box {
-      padding: 16px 20px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--grey-3);
       flex-shrink: 0;
     }
@@ -74,7 +57,7 @@
       font-size: 14px;
       font-weight: 700;
       color: var(--black);
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     input[type="text"] {
       width: 100%;
@@ -96,13 +79,11 @@
       font-size: 13px;
       color: var(--blue);
       font-weight: 700;
-      margin-top: 6px;
+      margin-top: 5px;
       min-height: 18px;
     }
-
-    /* Stats strip */
     .stats-bar {
-      padding: 7px 20px;
+      padding: 6px 16px;
       background: var(--grey-4);
       border-bottom: 1px solid var(--grey-3);
       font-size: 12px;
@@ -111,12 +92,9 @@
       justify-content: space-between;
       flex-shrink: 0;
     }
-
-    /* TOC list */
     .toc-list { overflow-y: auto; flex: 1; }
-
     .toc-item {
-      padding: 10px 16px 10px 20px;
+      padding: 9px 14px 9px 16px;
       border-bottom: 1px solid var(--grey-3);
       cursor: pointer;
       display: flex;
@@ -125,21 +103,16 @@
       transition: background 0.12s;
       border-left: 4px solid transparent;
     }
-    .toc-item:hover          { background: #f0f2f4; }
-    .toc-item.active         { background: #eef2f7; border-left-color: var(--blue); }
-    .toc-item.has-match      { border-left-color: var(--focus); background: #fffdf0; }
+    .toc-item:hover            { background: #f0f2f4; }
+    .toc-item.active           { background: #eef2f7; border-left-color: var(--blue); }
+    .toc-item.has-match        { border-left-color: var(--focus); background: #fffdf0; }
     .toc-item.active.has-match { border-left-color: var(--blue); background: #eef2f7; }
-
-    .page-num {
-      color: var(--blue);
-      font-weight: 700;
-      font-size: 14px;
-    }
+    .page-num   { color: var(--blue); font-weight: 700; font-size: 14px; }
     .page-title {
       font-size: 12px;
       color: var(--grey-1);
       margin-top: 2px;
-      max-width: 220px;
+      max-width: 200px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -154,49 +127,35 @@
       white-space: nowrap;
     }
 
-    /* ── RIGHT PANEL: PAGE VIEWER ── */
+    /* ── CENTRE: VIEWER ── */
     .viewer-panel {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 28px;
+      padding: 16px 20px;
       background: #e8eaec;
       display: flex;
       flex-direction: column;
       align-items: center;
       scroll-behavior: smooth;
     }
+    .page-wrapper       { margin-bottom: 24px; text-align: left; }
+    .page-label         { font-size: 13px; font-weight: 700; color: var(--grey-1); margin-bottom: 4px; }
+    .evidence-page      { position: relative; display: inline-block; background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+    .evidence-img       { display: block; max-height: calc(100vh - 200px); max-width: calc(100vw - 580px); width: auto; height: auto; }
 
-    .page-wrapper {
-      margin-bottom: 28px;
-      text-align: left;
+    /* ── PAGE CHECKBOX ── */
+    .page-cb-wrap {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      z-index: 20;
+      background: rgba(255,255,255,0.92);
+      border-radius: 3px;
+      padding: 2px 3px;
     }
+    .page-cb { width: 20px; height: 20px; cursor: pointer; accent-color: var(--blue); display: block; }
 
-    .page-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--grey-1);
-      margin-bottom: 6px;
-      letter-spacing: .01em;
-    }
-
-    /* The page container — highlight boxes position relative to this */
-    .evidence-page {
-      position: relative;
-      display: inline-block;
-      background: var(--white);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-    }
-
-    /* A4 FIT: shrink image so full page is visible in viewport */
-    .evidence-img {
-      display: block;
-      max-height: calc(100vh - 240px);  /* viewport minus hero + padding */
-      max-width: calc(100vw - 380px);   /* viewport minus sidebar + padding */
-      width: auto;
-      height: auto;
-    }
-
-    /* ── HIGHLIGHT OVERLAY — GOV.UK focus yellow ── */
+    /* ── HIGHLIGHT OVERLAY ── */
     .highlight-box {
       position: absolute;
       background: rgba(255, 221, 0, 0.45);
@@ -207,15 +166,63 @@
     }
     @keyframes hl-pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
+    /* ── RIGHT: EVIDENCE COLUMN ── */
+    .evidence-panel {
+      width: 230px;
+      background: var(--white);
+      border-left: 1px solid var(--grey-3);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .ev-header {
+      padding: 9px 10px;
+      background: var(--black);
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ev-header-left  { display: flex; align-items: center; gap: 7px; }
+    .ev-count        { background: var(--blue); color: var(--white); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+    .ev-download {
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 2px;
+      font-family: inherit;
+    }
+    .ev-download:hover    { background: #145da6; }
+    .ev-download:disabled { background: var(--grey-2); cursor: default; }
+    .ev-list  { overflow-y: auto; flex: 1; padding: 6px; }
+    .ev-empty { font-size: 12px; color: var(--grey-1); text-align: center; padding: 20px 10px; line-height: 1.4; }
+    .ev-item  { border: 1px solid var(--grey-3); border-radius: 3px; margin-bottom: 6px; padding: 7px; background: var(--grey-4); }
+    .ev-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .ev-num   { background: var(--blue); color: var(--white); font-size: 11px; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ev-meta  { font-size: 11px; color: var(--grey-1); }
+    .ev-rm    { background: none; border: none; color: var(--grey-1); font-size: 16px; cursor: pointer; line-height: 1; padding: 0 2px; }
+    .ev-rm:hover { color: var(--red); }
+    .ev-query { font-weight: 700; color: var(--black); font-size: 12px; margin-bottom: 4px; }
+    .ev-thumb { position: relative; width: 100%; }
+    .ev-thumb img { display: block; width: 100%; height: auto; }
+    .ev-hl    { position: absolute; background: rgba(255, 221, 0, 0.5); pointer-events: none; }
+
     /* ── SCROLLBARS ── */
-    ::-webkit-scrollbar            { width: 8px; }
+    ::-webkit-scrollbar            { width: 7px; }
     ::-webkit-scrollbar-track      { background: var(--white); }
     ::-webkit-scrollbar-thumb      { background: var(--grey-2); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover{ background: var(--grey-1); }
 
     /* ── KEYBOARD HINT ── */
     .kb {
-      position: fixed; bottom: 10px; right: 16px;
+      position: fixed; bottom: 10px; right: 246px;
       font-size: 11px; color: var(--grey-1);
       pointer-events: none; z-index: 100;
       background: rgba(255,255,255,0.88);
@@ -226,15 +233,15 @@
 </head>
 <body>
 
-<!-- HERO BANNER -->
+<!-- HERO -->
 <div class="hero-banner">
     <img src="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/MONA/JM-HEADER.svg" class="hero-img" alt="Justice Minds Forensic Intelligence Ltd">
 </div>
 
-<!-- TWO-PANEL ROW -->
+<!-- THREE-PANEL ROW -->
 <div class="panels-row">
 
-<!-- LEFT: CONTROLS -->
+<!-- LEFT: TOC + SEARCH -->
 <div class="toc-panel">
     <div class="search-box">
         <label class="search-label" for="searchInput">Search</label>
@@ -249,8 +256,19 @@
     <div class="toc-list" id="tocList"></div>
 </div>
 
-<!-- RIGHT: VIEWER -->
+<!-- CENTRE: VIEWER -->
 <div class="viewer-panel" id="viewerPanel"></div>
+
+<!-- RIGHT: EVIDENCE COLUMN -->
+<div class="evidence-panel">
+    <div class="ev-header">
+        <div class="ev-header-left">Evidence <span class="ev-count" id="evCount">0</span></div>
+        <button class="ev-download" id="evDownload" disabled>DOWNLOAD</button>
+    </div>
+    <div class="ev-list" id="evList">
+        <div class="ev-empty">Check a highlighted page to pin it here.</div>
+    </div>
+</div>
 
 </div><!-- end panels-row -->
 
@@ -260,13 +278,17 @@
 (function () {
     const viewer   = document.getElementById('viewerPanel');
     const tocList  = document.getElementById('tocList');
+    const evList   = document.getElementById('evList');
+    const evCount  = document.getElementById('evCount');
+    const evDl     = document.getElementById('evDownload');
     const TOTAL_PAGES = typeof EVIDENCE_DATA !== 'undefined' ? EVIDENCE_DATA.length : 0;
 
-    // ── PRE-COMPUTE: group each page's words into lines ──
-    // Words on the same baseline (y within 1.2%) belong to one line.
-    // A line is highlighted as a single block — gives sentence-level context.
-    const pageLines = {};                          // { pageNum → [[word,…], …] }
+    // ── state ──
+    const pageLines   = {};       // { pageNum → [[word,…], …] }
+    const pinnedPages = [];       // [{page, query, bboxes:[{x,y,w,h}], imageSrc}]
+    let   currentQuery = '';      // active search term
 
+    // ── line grouping ──
     function groupLines(wordMap) {
         if (!wordMap || !wordMap.length) return [];
         const sorted = [...wordMap].sort((a, b) => a.y - b.y || a.x - b.x);
@@ -306,9 +328,9 @@
         let totalWords = 0;
         EVIDENCE_DATA.forEach(item => {
             totalWords += item.word_map.length;
-            pageLines[item.page] = groupLines(item.word_map);   // cache lines
+            pageLines[item.page] = groupLines(item.word_map);
 
-            // ── TOC entry ──
+            // TOC entry
             const tocItem        = document.createElement('div');
             tocItem.className    = 'toc-item';
             tocItem.id           = 'toc-' + item.page;
@@ -319,7 +341,7 @@
             tocItem.onclick      = () => scrollToPage(item.page);
             tocList.appendChild(tocItem);
 
-            // ── Viewer page ──
+            // Viewer page
             const wrapper        = document.createElement('div');
             wrapper.className    = 'page-wrapper';
             wrapper.id           = 'wrapper-' + item.page;
@@ -332,6 +354,17 @@
             pageDiv.className    = 'evidence-page';
             pageDiv.id           = 'page-' + item.page;
             pageDiv.innerHTML    = '<img src="' + item.image + '" class="evidence-img">';
+
+            // ── checkbox ──
+            const cbWrap         = document.createElement('div');
+            cbWrap.className     = 'page-cb-wrap';
+            const cb             = document.createElement('input');
+            cb.type              = 'checkbox';
+            cb.className         = 'page-cb';
+            cb.id                = 'cb-' + item.page;
+            cb.addEventListener('change', () => togglePin(item.page, cb.checked));
+            cbWrap.appendChild(cb);
+            pageDiv.appendChild(cbWrap);
 
             wrapper.appendChild(label);
             wrapper.appendChild(pageDiv);
@@ -351,19 +384,20 @@
         if (el)    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // ── 3. SEARCH — line-level highlights + TOC filter ──
+    // ── 3. SEARCH ──
     function performSearch() {
         const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        currentQuery = query;
 
-        // ── clear previous state ──
+        // clear highlights + badges
         document.querySelectorAll('.highlight-box').forEach(el => el.remove());
         document.querySelectorAll('.toc-item').forEach(i => {
             i.classList.remove('has-match', 'active');
-            i.style.display = '';                       // restore visibility
+            i.style.display = '';
         });
         document.querySelectorAll('.match-badge').forEach(b => {
-            b.style.display  = 'none';
-            b.textContent    = '';
+            b.style.display = 'none';
+            b.textContent   = '';
         });
 
         if (query.length < 2) {
@@ -371,13 +405,10 @@
             return;
         }
 
-        // word-boundary regex — "stage 2" matches the phrase, not inside "backstage"
         const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const re      = new RegExp('\\b' + escaped.replace(/ +/g, '\\s+') + '\\b');
 
-        let totalMatches   = 0;
-        let matchedPages   = 0;
-        let firstMatchPage = null;
+        let totalMatches = 0, matchedPages = 0, firstMatchPage = null;
 
         EVIDENCE_DATA.forEach(item => {
             const pageDiv = document.getElementById('page-'  + item.page);
@@ -388,20 +419,18 @@
             const lines = pageLines[item.page] || [];
 
             lines.forEach(line => {
-                // join words into line text — enables multi-word phrase search
                 const lineText = line.map(w => w.text).join(' ').toLowerCase();
                 if (!re.test(lineText)) return;
 
                 pageWordMatches++;
 
-                // highlight the WHOLE line (sentence-level context)
                 const bbox = lineBBox(line);
                 const hl   = document.createElement('div');
-                hl.className   = 'highlight-box';
-                hl.style.left  = bbox.x + '%';
-                hl.style.top   = bbox.y + '%';
-                hl.style.width = bbox.w + '%';
-                hl.style.height= bbox.h + '%';
+                hl.className    = 'highlight-box';
+                hl.style.left   = bbox.x + '%';
+                hl.style.top    = bbox.y + '%';
+                hl.style.width  = bbox.w + '%';
+                hl.style.height = bbox.h + '%';
                 pageDiv.appendChild(hl);
             });
 
@@ -414,7 +443,6 @@
                 const badge = document.getElementById('badge-' + item.page);
                 if (badge) { badge.style.display = 'inline'; badge.textContent = pageWordMatches; }
             } else {
-                // ── FILTER: hide non-matching pages from TOC ──
                 tocEl.style.display = 'none';
             }
         });
@@ -427,7 +455,7 @@
         if (firstMatchPage) scrollToPage(firstMatchPage);
     }
 
-    // ── 4. KEYBOARD: Enter cycles through matching pages ──
+    // ── 4. KEYBOARD: Enter cycles matches ──
     document.getElementById('searchInput').addEventListener('keydown', function (e) {
         if (e.key !== 'Enter') return;
         const matches = [...document.querySelectorAll('.toc-item.has-match')];
@@ -443,9 +471,139 @@
                 .scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ── 5. Wire input ──
+    // ── 5. Wire search ──
     document.getElementById('searchInput').addEventListener('input', performSearch);
 
+    // ── 6. PIN / EVIDENCE COLUMN ──
+    function togglePin(pageNum, checked) {
+        if (checked) {
+            // snapshot current highlights for this page
+            const pageDiv = document.getElementById('page-' + pageNum);
+            const hls     = pageDiv ? [...pageDiv.querySelectorAll('.highlight-box')] : [];
+            const bboxes  = hls.map(el => ({
+                x: parseFloat(el.style.left),
+                y: parseFloat(el.style.top),
+                w: parseFloat(el.style.width),
+                h: parseFloat(el.style.height)
+            }));
+            const img = pageDiv ? pageDiv.querySelector('img') : null;
+
+            pinnedPages.push({
+                page:     pageNum,
+                query:    currentQuery || '(no search)',
+                bboxes:   bboxes,
+                imageSrc: img ? img.src : ''
+            });
+        } else {
+            // remove ALL entries for this page
+            for (let i = pinnedPages.length - 1; i >= 0; i--) {
+                if (pinnedPages[i].page === pageNum) pinnedPages.splice(i, 1);
+            }
+        }
+        renderEvidence();
+    }
+
+    function removePin(idx) {
+        const page = pinnedPages[idx].page;
+        pinnedPages.splice(idx, 1);
+        // uncheck checkbox if no more entries for that page
+        if (!pinnedPages.some(p => p.page === page)) {
+            const cb = document.getElementById('cb-' + page);
+            if (cb) cb.checked = false;
+        }
+        renderEvidence();
+    }
+
+    function renderEvidence() {
+        evCount.textContent = pinnedPages.length;
+        evDl.disabled       = pinnedPages.length === 0;
+
+        if (pinnedPages.length === 0) {
+            evList.innerHTML = '<div class="ev-empty">Check a highlighted page to pin it here.</div>';
+            return;
+        }
+
+        evList.innerHTML = '';
+        pinnedPages.forEach((entry, idx) => {
+            const item = document.createElement('div');
+            item.className = 'ev-item';
+
+            // header row: number + page + remove button
+            const head = document.createElement('div');
+            head.className = 'ev-item-head';
+            head.innerHTML =
+                '<span class="ev-num">' + (idx + 1) + '</span>' +
+                '<span class="ev-meta">Page ' + entry.page + '</span>' +
+                '<button class="ev-rm" title="Remove">&times;</button>';
+            head.querySelector('.ev-rm').addEventListener('click', () => removePin(idx));
+
+            // search term
+            const qDiv = document.createElement('div');
+            qDiv.className   = 'ev-query';
+            qDiv.textContent = entry.query;
+
+            // thumbnail + highlight overlays
+            const thumb = document.createElement('div');
+            thumb.className = 'ev-thumb';
+            const tImg      = document.createElement('img');
+            tImg.src        = entry.imageSrc;
+            thumb.appendChild(tImg);
+
+            entry.bboxes.forEach(bb => {
+                const hl        = document.createElement('div');
+                hl.className    = 'ev-hl';
+                hl.style.left   = bb.x + '%';
+                hl.style.top    = bb.y + '%';
+                hl.style.width  = bb.w + '%';
+                hl.style.height = bb.h + '%';
+                thumb.appendChild(hl);
+            });
+
+            item.appendChild(head);
+            item.appendChild(qDiv);
+            item.appendChild(thumb);
+            evList.appendChild(item);
+        });
+    }
+
+    // ── 7. DOWNLOAD ALL ──
+    evDl.addEventListener('click', downloadAll);
+
+    function downloadAll() {
+        if (!pinnedPages.length) return;
+        pinnedPages.forEach((entry, idx) => {
+            const img = new Image();
+            img.src = entry.imageSrc;
+            img.onload = () => {
+                const canvas  = document.createElement('canvas');
+                canvas.width  = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx     = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                // draw highlight rectangles
+                ctx.fillStyle = 'rgba(255, 221, 0, 0.5)';
+                entry.bboxes.forEach(bb => {
+                    ctx.fillRect(
+                        bb.x / 100 * canvas.width,
+                        bb.y / 100 * canvas.height,
+                        bb.w / 100 * canvas.width,
+                        bb.h / 100 * canvas.height
+                    );
+                });
+
+                // trigger download
+                const link    = document.createElement('a');
+                link.download = 'evidence_' + (idx + 1) + '_p' + entry.page + '_' + entry.query.replace(/[^a-z0-9]/gi, '_') + '.png';
+                link.href     = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+        });
+    }
+
+    // ── util ──
     function escHtml(s) {
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
