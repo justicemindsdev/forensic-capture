@@ -299,6 +299,28 @@ let currentPdf=null; // {folder, url, doc, pages:[{canvas,textItems}]}
 let pageTextData=[]; // per-page text items for search
 let pinnedPages=[];
 let currentQuery='';
+let csvIndex=null;
+let csvLoading=false;
+
+// ── BUILD CSV INDEX FOR CROSS-TRANSCRIPT SEARCH ──
+async function buildCsvIndex(){
+    if(csvIndex) return csvIndex;
+    if(csvLoading) return null;
+    csvLoading=true;
+    document.getElementById('matchCount').textContent='Building search index (102 transcripts)…';
+    csvIndex=new Array(TRANSCRIPTS.length).fill('');
+    const batch=12;
+    for(let b=0;b<TRANSCRIPTS.length;b+=batch){
+        const chunk=TRANSCRIPTS.slice(b,b+batch);
+        const results=await Promise.allSettled(chunk.map(t=>
+            fetch(t.pdf.replace(/\.pdf$/,'.csv')).then(r=>r.ok?r.text():'')
+        ));
+        results.forEach((r,i)=>{csvIndex[b+i]=r.status==='fulfilled'?r.value:'';});
+        document.getElementById('matchCount').textContent='Indexing… '+(Math.min(b+batch,TRANSCRIPTS.length))+'/'+TRANSCRIPTS.length;
+    }
+    csvLoading=false;
+    return csvIndex;
+}
 
 // ── TAB SWITCHING ──
 window.switchTab=function(tab){
@@ -373,16 +395,17 @@ async function loadTranscript(idx){
             const ctx=canvas.getContext('2d');
             await page.render({canvasContext:ctx,viewport:vp}).promise;
 
-            // Extract text for search
+            // Extract text for search — viewport transform for precise positioning
             const textContent=await page.getTextContent();
             const items=textContent.items.map(item=>{
-                const tx=item.transform;
+                const t=pdfjsLib.Util.transform(vp.transform,item.transform);
+                const fh=Math.sqrt(t[0]*t[0]+t[1]*t[1]);
                 return {
                     str:item.str,
-                    x:tx[4]/vp.width*100,
-                    y:(vp.height-tx[5]-item.height*scale)/vp.height*100,
+                    x:t[4]/vp.width*100,
+                    y:(t[5]-fh)/vp.height*100,
                     w:item.width*scale/vp.width*100,
-                    h:item.height*scale/vp.height*100
+                    h:fh*1.15/vp.height*100
                 };
             });
             pageTextData.push({pageNum:p, items, fullText:items.map(i=>i.str).join(' ')});
@@ -416,8 +439,9 @@ function showExhibit(idx){
 }
 window.showExhibit=showExhibit;
 
-// ── SEARCH ──
-function performSearch(){
+// ── SEARCH: CROSS-TRANSCRIPT VIA CSV + PDF HIGHLIGHTS ──
+let searchTimeout=null;
+async function performSearch(){
     const query=document.getElementById('searchInput').value.toLowerCase().trim();
     currentQuery=query;
 
@@ -427,21 +451,45 @@ function performSearch(){
 
     if(query.length<2){document.getElementById('matchCount').textContent='';return;}
 
-    if(currentTab==='transcripts' && !currentPdf){
-        document.getElementById('matchCount').textContent='Load a transcript first';
-        return;
-    }
+    // Cross-transcript search via CSV index
+    const idx=await buildCsvIndex();
+    if(!idx){document.getElementById('matchCount').textContent='Index loading…';return;}
 
-    let totalMatches=0, matchedPages=0, firstPage=null;
+    const escaped=query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re=new RegExp(escaped,'gi');
+    let totalTranscripts=0, totalHits=0;
+    TRANSCRIPTS.forEach((t,i)=>{
+        const tocEl=document.getElementById('toc-t-'+i);
+        if(!tocEl) return;
+        const badge=tocEl.querySelector('.match-badge');
+        const hits=(idx[i].toLowerCase().match(re)||[]).length;
+        if(hits>0){
+            tocEl.classList.add('has-match');
+            if(badge){badge.textContent=hits;badge.style.display='inline';}
+            totalTranscripts++;totalHits+=hits;
+        } else {
+            tocEl.classList.remove('has-match');
+            if(badge) badge.style.display='none';
+        }
+    });
 
+    document.getElementById('matchCount').textContent=totalHits
+        ? totalHits+' match'+(totalHits!==1?'es':'')+' across '+totalTranscripts+' transcript'+(totalTranscripts!==1?'s':'')
+        : 'No matches across transcripts';
+
+    // Also highlight within currently loaded PDF
+    highlightCurrentPdf();
+}
+
+function highlightCurrentPdf(){
+    document.querySelectorAll('.highlight-box').forEach(el=>el.remove());
+    if(currentQuery.length<2||!pageTextData.length) return;
+    let firstPage=null;
     pageTextData.forEach(pd=>{
         const pageDiv=document.getElementById('page-'+pd.pageNum);
         if(!pageDiv) return;
-        let count=0;
-
         pd.items.forEach(item=>{
-            if(item.str.toLowerCase().includes(query)){
-                count++;
+            if(item.str.toLowerCase().includes(currentQuery)){
                 const hl=document.createElement('div');
                 hl.className='highlight-box';
                 hl.style.left=item.x+'%';
@@ -449,33 +497,24 @@ function performSearch(){
                 hl.style.width=Math.max(item.w,2)+'%';
                 hl.style.height=Math.max(item.h,1.5)+'%';
                 pageDiv.appendChild(hl);
+                if(!firstPage) firstPage=pd.pageNum;
             }
         });
-
-        if(count>0){
-            totalMatches+=count;
-            matchedPages++;
-            if(!firstPage) firstPage=pd.pageNum;
-        }
     });
-
-    document.getElementById('matchCount').textContent=totalMatches
-        ? totalMatches+' match'+(totalMatches!==1?'es':'')+' across '+matchedPages+' page'+(matchedPages!==1?'s':'')
-        : 'no matches in this transcript';
-
     if(firstPage){
         const el=document.getElementById('wrapper-'+firstPage);
         if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
     }
 }
 
-document.getElementById('searchInput').addEventListener('input',performSearch);
+document.getElementById('searchInput').addEventListener('input',function(){
+    clearTimeout(searchTimeout);
+    searchTimeout=setTimeout(performSearch,400);
+});
 document.getElementById('searchInput').addEventListener('keydown',function(e){
     if(e.key==='Enter'){
-        const hls=[...document.querySelectorAll('.highlight-box')];
-        if(!hls.length) return;
-        // cycle through highlighted pages
-        hls[0].scrollIntoView({behavior:'smooth',block:'center'});
+        clearTimeout(searchTimeout);
+        performSearch();
     }
 });
 
