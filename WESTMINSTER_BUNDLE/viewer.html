@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Westminster JR — Forensic Evidence Viewer — 102 Transcripts</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --black:#0b0c0c; --white:#ffffff; --grey-1:#6f777b; --grey-2:#bfc1c3;
+  --grey-3:#dee0e2; --grey-4:#f8f8f8; --blue:#1d70b8; --focus:#ffdd00; --red:#d4351c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{display:flex;flex-direction:column;height:100vh;background:var(--grey-4);color:var(--black);font-family:"GDS Transport","Helvetica Neue",Arial,sans-serif;overflow:hidden;font-size:16px}
+
+.hero-banner{flex-shrink:0;width:100%;background:#0b0c0c}
+.hero-img{display:block;width:100%;height:auto}
+
+.panels-row{display:flex;flex:1;overflow:hidden}
+
+/* LEFT: TRANSCRIPT LIST */
+.toc-panel{width:320px;background:var(--white);border-right:1px solid var(--grey-3);display:flex;flex-direction:column;flex-shrink:0}
+.search-box{padding:10px 12px;border-bottom:1px solid var(--grey-3);flex-shrink:0}
+.search-label{display:block;font-size:13px;font-weight:700;color:var(--black);margin-bottom:4px}
+input[type="text"]{width:100%;background:var(--white);border:2px solid var(--grey-2);color:var(--black);padding:7px 10px;font-family:inherit;font-size:15px;outline:none;border-radius:0}
+input[type="text"]:focus{outline:3px solid var(--focus);outline-offset:0;border-color:var(--black)}
+#matchCount{font-size:12px;color:var(--blue);font-weight:700;margin-top:4px;min-height:16px}
+.mode-tabs{display:flex;border-bottom:1px solid var(--grey-3);flex-shrink:0}
+.mode-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--grey-1);transition:all .15s}
+.mode-tab:hover{background:#f0f2f4}
+.mode-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.stats-bar{padding:5px 12px;background:var(--grey-4);border-bottom:1px solid var(--grey-3);font-size:11px;color:var(--grey-1);display:flex;justify-content:space-between;flex-shrink:0}
+.toc-list{overflow-y:auto;flex:1}
+.toc-item{padding:8px 12px;border-bottom:1px solid var(--grey-3);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .12s;border-left:4px solid transparent;gap:6px}
+.toc-item:hover{background:#f0f2f4}
+.toc-item.active{background:#eef2f7;border-left-color:var(--blue)}
+.toc-item.has-match{border-left-color:var(--focus);background:#fffdf0}
+.toc-date{color:var(--blue);font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0}
+.toc-title{font-size:11px;color:var(--grey-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.match-badge{background:var(--focus);color:var(--black);font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;white-space:nowrap;flex-shrink:0;display:none}
+
+/* EXHIBIT GALLERY ITEMS */
+.ex-card{padding:6px 10px;border-bottom:1px solid var(--grey-3);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .12s}
+.ex-card:hover{background:#fffdf0}
+.ex-num{background:var(--black);color:var(--white);font-size:9px;font-weight:700;width:32px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:2px}
+.ex-label{font-size:11px;color:var(--black);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+
+/* CENTRE: VIEWER */
+.viewer-panel{flex:1;overflow-y:auto;padding:16px 20px;background:#e8eaec;display:flex;flex-direction:column;align-items:center;scroll-behavior:smooth}
+.page-wrapper{margin-bottom:24px;text-align:left}
+.page-label{font-size:12px;font-weight:700;color:var(--grey-1);margin-bottom:4px}
+.evidence-page{position:relative;display:inline-block;background:var(--white);box-shadow:0 2px 10px rgba(0,0,0,0.12)}
+.evidence-page canvas{display:block;max-height:calc(100vh - 200px);max-width:calc(100vw - 600px);width:auto;height:auto}
+.page-copy-btn{position:absolute;top:4px;right:4px;z-index:20;background:rgba(255,255,255,0.92);border:1px solid var(--blue);border-radius:3px;color:var(--blue);font-size:11px;font-weight:700;padding:2px 6px;cursor:pointer;line-height:1.3;font-family:inherit}
+.page-copy-btn:hover{background:var(--blue);color:var(--white)}
+.highlight-box{position:absolute;background:rgb(255,221,0);mix-blend-mode:darken;border:none;pointer-events:none;z-index:10;animation:hl-pulse 2s ease-in-out infinite}
+@keyframes hl-pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--grey-1);font-size:14px;gap:12px}
+.loading .spinner{width:32px;height:32px;border:3px solid var(--grey-3);border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;color:var(--grey-1);padding:60px 20px;font-size:14px;line-height:1.6}
+
+/* RIGHT: EVIDENCE COLUMN */
+.evidence-panel{width:240px;background:var(--white);border-left:1px solid var(--grey-3);display:flex;flex-direction:column;flex-shrink:0}
+.ev-header{padding:9px 10px;background:var(--black);color:var(--white);font-size:13px;font-weight:700;flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+.ev-header-left{display:flex;align-items:center;gap:7px}
+.ev-count{background:var(--blue);color:var(--white);font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px}
+.ev-download{background:var(--blue);color:var(--white);border:none;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;border-radius:2px;font-family:inherit}
+.ev-download:hover{background:#145da6}
+.ev-download:disabled{background:var(--grey-2);cursor:default}
+.ev-list{overflow-y:auto;flex:1;padding:6px}
+.ev-empty{font-size:12px;color:var(--grey-1);text-align:center;padding:20px 10px;line-height:1.4}
+.ev-item{border:1px solid var(--grey-3);border-radius:3px;margin-bottom:6px;padding:7px;background:var(--grey-4)}
+.ev-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ev-num-badge{background:var(--blue);color:var(--white);font-size:11px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ev-rm{background:none;border:none;color:var(--grey-1);font-size:16px;cursor:pointer;line-height:1;padding:0 2px}
+.ev-rm:hover{color:var(--red)}
+.ev-notes{font-size:9px;color:var(--grey-1);margin-top:5px;line-height:1.35}
+.ev-thumb{position:relative;width:100%}
+.ev-thumb img,.ev-thumb canvas{display:block;width:100%;height:auto}
+.ev-hl{position:absolute;background:rgb(255,221,0);mix-blend-mode:darken;pointer-events:none}
+.ev-banner{position:absolute;top:0;left:0;right:0;height:17px;background:#0b0c0c;display:flex;justify-content:space-between;align-items:center;padding:0 5px;z-index:5;pointer-events:none}
+.ev-banner span{color:#fff;font-size:7.5px;font-weight:700;text-transform:uppercase;white-space:nowrap;letter-spacing:.04em}
+
+/* EXHIBIT LIGHTBOX */
+.lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out}
+.lightbox.open{display:flex}
+.lightbox img{max-width:95%;max-height:95%;object-fit:contain}
+
+::-webkit-scrollbar{width:7px}
+::-webkit-scrollbar-track{background:var(--white)}
+::-webkit-scrollbar-thumb{background:var(--grey-2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--grey-1)}
+.kb{position:fixed;bottom:10px;right:256px;font-size:11px;color:var(--grey-1);pointer-events:none;z-index:100;background:rgba(255,255,255,.88);padding:4px 10px;border-radius:3px;border:1px solid var(--grey-3)}
+</style>
+<script>
+const TRANSCRIPTS=[
+  {folder:"2023-07-25 Ben and Emma",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2023-07-25%20Ben%20and%20Emma/2023-07-25%20Ben%20and%20Emma.pdf",date:"2023-07-25",title:"Ben and Emma"},
+  {folder:"2023-11-09 Man and Van Westminster",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2023-11-09%20Man%20and%20Van%20Westminster/2023-11-09%20Man%20and%20Van%20Westminster.pdf",date:"2023-11-09",title:"Man and Van Westminster"},
+  {folder:"2024-02-03 03 02 2024 Ben and Emma",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-02-03%2003%2002%202024%20Ben%20and%20Emma/2024-02-03%2003%2002%202024%20Ben%20and%20Emma.pdf",date:"2024-02-03",title:"03 02 2024 Ben and Emma"},
+  {folder:"2024-02-17 emma homless Ben Emma",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-02-17%20emma%20homless%20Ben%20Emma/2024-02-17%20emma%20homless%20Ben%20Emma.pdf",date:"2024-02-17",title:"emma homless Ben Emma"},
+  {folder:"2024-03-08 2024 ben emma",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-03-08%202024%20ben%20emma/2024-03-08%202024%20ben%20emma.pdf",date:"2024-03-08",title:"2024 ben emma"},
+  {folder:"2024-04-08 Gemma family court lovely",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-04-08%20Gemma%20family%20court%20lovely/2024-04-08%20Gemma%20family%20court%20lovely.pdf",date:"2024-04-08",title:"Gemma family court lovely"},
+  {folder:"2024-04-24 Gemma grievances about the case stoke court",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-04-24%20Gemma%20grievances%20about%20the%20case%20stoke%20court/2024-04-24%20Gemma%20grievances%20about%20the%20case%20stoke%20court.pdf",date:"2024-04-24",title:"Gemma grievances about the case stoke court"},
+  {folder:"2024-05-30 joanne social worker",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-05-30%20joanne%20social%20worker/2024-05-30%20joanne%20social%20worker.pdf",date:"2024-05-30",title:"joanne social worker"},
+  {folder:"2024-07-16 MDT with Ben and Integrity Care",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-07-16%20MDT%20with%20Ben%20and%20Integrity%20Care/2024-07-16%20MDT%20with%20Ben%20and%20Integrity%20Care.pdf",date:"2024-07-16",title:"MDT with Ben and Integrity Care"},
+  {folder:"2024-07-21 Ben and Emma Family Unity",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-07-21%20Ben%20and%20Emma%20Family%20Unity/2024-07-21%20Ben%20and%20Emma%20Family%20Unity.pdf",date:"2024-07-21",title:"Ben and Emma Family Unity"},
+  {folder:"2024-07-22 13 11 30 Ben joanne 2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-07-22%2013%2011%2030%20Ben%20joanne%202/2024-07-22%2013%2011%2030%20Ben%20joanne%202.pdf",date:"2024-07-22",title:"13 11 30 Ben joanne 2"},
+  {folder:"2024-07-22 14 11 31 Ben and Joanne 3",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-07-22%2014%2011%2031%20Ben%20and%20Joanne%203/2024-07-22%2014%2011%2031%20Ben%20and%20Joanne%203.pdf",date:"2024-07-22",title:"14 11 31 Ben and Joanne 3"},
+  {folder:"2024-07-30 Emma ben 29 07 2024",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-07-30%20Emma%20ben%2029%2007%202024/2024-07-30%20Emma%20ben%2029%2007%202024.pdf",date:"2024-07-30",title:"Emma ben 29 07 2024"},
+  {folder:"2024-08-11 Ben Emma update re ashley",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-08-11%20Ben%20Emma%20update%20re%20ashley/2024-08-11%20Ben%20Emma%20update%20re%20ashley.pdf",date:"2024-08-11",title:"Ben Emma update re ashley"},
+  {folder:"2024-08-15 Joanne Williams Disconnect social work",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-08-15%20Joanne%20Williams%20Disconnect%20social%20work/2024-08-15%20Joanne%20Williams%20Disconnect%20social%20work.pdf",date:"2024-08-15",title:"Joanne Williams Disconnect social work"},
+  {folder:"2024-09-03 Ben and Atia westminster outreach BEN PUBLIC SPEAKING ENDORSEMENT",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-09-03%20Ben%20and%20Atia%20westminster%20outreach%20BEN%20PUBLIC%20SPEAKING%20ENDORSEMENT/2024-09-03%20Ben%20and%20Atia%20westminster%20outreach%20BEN%20PUBLIC%20SPEAKING%20ENDORSEMENT.pdf",date:"2024-09-03",title:"Ben and Atia westminster outreach BEN PUBLIC SPEAKING ENDORSEMENT"},
+  {folder:"2024-10-08 Atiah Westminster discussion",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-10-08%20Atiah%20Westminster%20discussion/2024-10-08%20Atiah%20Westminster%20discussion.pdf",date:"2024-10-08",title:"Atiah Westminster discussion"},
+  {folder:"2024-11-05 Ben and Marilyn",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-05%20Ben%20and%20Marilyn/2024-11-05%20Ben%20and%20Marilyn.pdf",date:"2024-11-05",title:"Ben and Marilyn"},
+  {folder:"2024-11-07 November Marilyn and housing re Landlord",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-07%20November%20Marilyn%20and%20housing%20re%20Landlord/2024-11-07%20November%20Marilyn%20and%20housing%20re%20Landlord.pdf",date:"2024-11-07",title:"November Marilyn and housing re Landlord"},
+  {folder:"2024-11-09 Marilyn Support worker 1",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-09%20Marilyn%20Support%20worker%201/2024-11-09%20Marilyn%20Support%20worker%201.pdf",date:"2024-11-09",title:"Marilyn Support worker 1"},
+  {folder:"2024-11-09 Marilyn Support worker 2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-09%20Marilyn%20Support%20worker%202/2024-11-09%20Marilyn%20Support%20worker%202.pdf",date:"2024-11-09",title:"Marilyn Support worker 2"},
+  {folder:"2024-11-11 Ben Marilyn ben apologises gives talk on change",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Ben%20Marilyn%20ben%20apologises%20gives%20talk%20on%20change/2024-11-11%20Ben%20Marilyn%20ben%20apologises%20gives%20talk%20on%20change.pdf",date:"2024-11-11",title:"Ben Marilyn ben apologises gives talk on change"},
+  {folder:"2024-11-11 Ben Marilyn following dispute",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Ben%20Marilyn%20following%20dispute/2024-11-11%20Ben%20Marilyn%20following%20dispute.pdf",date:"2024-11-11",title:"Ben Marilyn following dispute"},
+  {folder:"2024-11-11 Ben and Marilyn Eviction dispute",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Ben%20and%20Marilyn%20Eviction%20dispute/2024-11-11%20Ben%20and%20Marilyn%20Eviction%20dispute.pdf",date:"2024-11-11",title:"Ben and Marilyn Eviction dispute"},
+  {folder:"2024-11-11 Marilyn 10 52 Tells lost house moments",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2010%2052%20Tells%20lost%20house%20moments/2024-11-11%20Marilyn%2010%2052%20Tells%20lost%20house%20moments.pdf",date:"2024-11-11",title:"Marilyn 10 52 Tells lost house moments"},
+  {folder:"2024-11-11 Marilyn 11 26 In flat locking it up",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2011%2026%20In%20flat%20locking%20it%20up/2024-11-11%20Marilyn%2011%2026%20In%20flat%20locking%20it%20up.pdf",date:"2024-11-11",title:"Marilyn 11 26 In flat locking it up"},
+  {folder:"2024-11-11 Marilyn 12 10 Housing ShelterAccom",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2012%2010%20Housing%20ShelterAccom/2024-11-11%20Marilyn%2012%2010%20Housing%20ShelterAccom.pdf",date:"2024-11-11",title:"Marilyn 12 10 Housing ShelterAccom"},
+  {folder:"2024-11-11 Marilyn 12 34",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2012%2034/2024-11-11%20Marilyn%2012%2034.pdf",date:"2024-11-11",title:"Marilyn 12 34"},
+  {folder:"2024-11-11 Marilyn 12 53 explains feeklings",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2012%2053%20explains%20feeklings/2024-11-11%20Marilyn%2012%2053%20explains%20feeklings.pdf",date:"2024-11-11",title:"Marilyn 12 53 explains feeklings"},
+  {folder:"2024-11-11 Marilyn 13 15 trying maintain calm",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2013%2015%20trying%20maintain%20calm/2024-11-11%20Marilyn%2013%2015%20trying%20maintain%20calm.pdf",date:"2024-11-11",title:"Marilyn 13 15 trying maintain calm"},
+  {folder:"2024-11-11 Marilyn 13 50",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-11%20Marilyn%2013%2050/2024-11-11%20Marilyn%2013%2050.pdf",date:"2024-11-11",title:"Marilyn 13 50"},
+  {folder:"2024-11-26 Joanne Ben Pre homeless",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-11-26%20Joanne%20Ben%20Pre%20homeless/2024-11-26%20Joanne%20Ben%20Pre%20homeless.pdf",date:"2024-11-26",title:"Joanne Ben Pre homeless"},
+  {folder:"2024-12-09 Mabalu and Marilyn",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-12-09%20Mabalu%20and%20Marilyn/2024-12-09%20Mabalu%20and%20Marilyn.pdf",date:"2024-12-09",title:"Mabalu and Marilyn"},
+  {folder:"2024-12-11 Ben Joanne",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-12-11%20Ben%20Joanne/2024-12-11%20Ben%20Joanne.pdf",date:"2024-12-11",title:"Ben Joanne"},
+  {folder:"2024-12-18 Joanne and Marilyn Westminster Social Workers",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-12-18%20Joanne%20and%20Marilyn%20Westminster%20Social%20Workers/2024-12-18%20Joanne%20and%20Marilyn%20Westminster%20Social%20Workers.pdf",date:"2024-12-18",title:"Joanne and Marilyn Westminster Social Workers"},
+  {folder:"2024-12-19 Emmanuel St Christopher's Village London Bridge 2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-12-19%20Emmanuel%20St%20Christopher%27s%20Village%20London%20Bridge%202/2024-12-19%20Emmanuel%20St%20Christopher%27s%20Village%20London%20Bridge%202.pdf",date:"2024-12-19",title:"Emmanuel St Christopher's Village London Bridge 2"},
+  {folder:"2024-12-20 Marilyn and Knight Frank Non involvement",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2024-12-20%20Marilyn%20and%20Knight%20Frank%20Non%20involvement/2024-12-20%20Marilyn%20and%20Knight%20Frank%20Non%20involvement.pdf",date:"2024-12-20",title:"Marilyn and Knight Frank Non involvement"},
+  {folder:"2025-01-20 Mabalu and Ben combined",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-01-20%20Mabalu%20and%20Ben%20combined/2025-01-20%20Mabalu%20and%20Ben%20combined.pdf",date:"2025-01-20",title:"Mabalu and Ben combined"},
+  {folder:"2025-02-14 Political global debate Ben Jordan and Emmanue St Christopher's Village London Bridge 2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-02-14%20Political%20global%20debate%20Ben%20Jordan%20and%20Emmanue%20St%20Christopher%27s%20Village%20London%20Bridge%202/2025-02-14%20Political%20global%20debate%20Ben%20Jordan%20and%20Emmanue%20St%20Christopher%27s%20Village%20London%20Bridge%202.pdf",date:"2025-02-14",title:"Political global debate Ben Jordan and Emmanue St Christopher's Village London Bridge 2"},
+  {folder:"2025-02-24 Ben and Integrity v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-02-24%20Ben%20and%20Integrity%20v2/2025-02-24%20Ben%20and%20Integrity%20v2.pdf",date:"2025-02-24",title:"Ben and Integrity v2"},
+  {folder:"2025-02-27 Westminster City Council Anthony Westminster v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-02-27%20Westminster%20City%20Council%20Anthony%20Westminster%20v2/2025-02-27%20Westminster%20City%20Council%20Anthony%20Westminster%20v2.pdf",date:"2025-02-27",title:"Westminster City Council Anthony Westminster v2"},
+  {folder:"2025-03-04 Ben blu Starbucks",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-04%20Ben%20blu%20Starbucks/2025-03-04%20Ben%20blu%20Starbucks.pdf",date:"2025-03-04",title:"Ben blu Starbucks"},
+  {folder:"2025-03-04 combined output",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-04%20combined%20output/2025-03-04%20combined%20output.pdf",date:"2025-03-04",title:"combined output"},
+  {folder:"2025-03-17 Meeting with Ben Mak, Mabalu conteh",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-17%20Meeting%20with%20Ben%20Mak%2C%20Mabalu%20conteh/2025-03-17%20Meeting%20with%20Ben%20Mak%2C%20Mabalu%20conteh.pdf",date:"2025-03-17",title:"Meeting with Ben Mak, Mabalu conteh"},
+  {folder:"2025-03-19 Ben and Emma regarding Lynne",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-19%20Ben%20and%20Emma%20regarding%20Lynne/2025-03-19%20Ben%20and%20Emma%20regarding%20Lynne.pdf",date:"2025-03-19",title:"Ben and Emma regarding Lynne"},
+  {folder:"2025-03-31 Ben mabalu constant misdirection and obstruction",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-31%20Ben%20mabalu%20constant%20misdirection%20and%20obstruction/2025-03-31%20Ben%20mabalu%20constant%20misdirection%20and%20obstruction.pdf",date:"2025-03-31",title:"Ben mabalu constant misdirection and obstruction"},
+  {folder:"2025-03-31 Mabalu and Ben Aggressive shouting despite Ben protecting.",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-31%20Mabalu%20and%20Ben%20Aggressive%20shouting%20despite%20Ben%20protecting./2025-03-31%20Mabalu%20and%20Ben%20Aggressive%20shouting%20despite%20Ben%20protecting..pdf",date:"2025-03-31",title:"Mabalu and Ben Aggressive shouting despite Ben protecting."},
+  {folder:"2025-03-31 Zoom Ben Mak, Mabalu Issues challenges Ben Faces",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-03-31%20Zoom%20Ben%20Mak%2C%20Mabalu%20Issues%20challenges%20Ben%20Faces/2025-03-31%20Zoom%20Ben%20Mak%2C%20Mabalu%20Issues%20challenges%20Ben%20Faces.pdf",date:"2025-03-31",title:"Zoom Ben Mak, Mabalu Issues challenges Ben Faces"},
+  {folder:"2025-04-01 Ben & Jasper & Sol INTEGRITY",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-01%20Ben%20%26%20Jasper%20%26%20Sol%20INTEGRITY/2025-04-01%20Ben%20%26%20Jasper%20%26%20Sol%20INTEGRITY.pdf",date:"2025-04-01",title:"Ben & Jasper & Sol INTEGRITY"},
+  {folder:"2025-04-04 Ben and Jade",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-04%20Ben%20and%20Jade/2025-04-04%20Ben%20and%20Jade.pdf",date:"2025-04-04",title:"Ben and Jade"},
+  {folder:"2025-04-07 Ben assess mabalu Conteh Integrity care",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-07%20Ben%20assess%20mabalu%20Conteh%20Integrity%20care/2025-04-07%20Ben%20assess%20mabalu%20Conteh%20Integrity%20care.pdf",date:"2025-04-07",title:"Ben assess mabalu Conteh Integrity care"},
+  {folder:"2025-04-16 police woman bus hit Westminster Bridge Road v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-16%20police%20woman%20bus%20hit%20Westminster%20Bridge%20Road%20v2/2025-04-16%20police%20woman%20bus%20hit%20Westminster%20Bridge%20Road%20v2.pdf",date:"2025-04-16",title:"police woman bus hit Westminster Bridge Road v2"},
+  {folder:"2025-04-21 Westminster contracted agency Integrity Witness statement Ben Blu",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-21%20Westminster%20contracted%20agency%20Integrity%20Witness%20statement%20Ben%20Blu/2025-04-21%20Westminster%20contracted%20agency%20Integrity%20Witness%20statement%20Ben%20Blu.pdf",date:"2025-04-21",title:"Westminster contracted agency Integrity Witness statement Ben Blu"},
+  {folder:"2025-04-21 ben mabalu in witness statement v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-21%20ben%20mabalu%20in%20witness%20statement%20v2/2025-04-21%20ben%20mabalu%20in%20witness%20statement%20v2.pdf",date:"2025-04-21",title:"ben mabalu in witness statement v2"},
+  {folder:"2025-04-22 Meeting with Ben Mak, Lynne 378d0a9c 87ed 4a43 81ec d3dd185aefe3",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-22%20Meeting%20with%20Ben%20Mak%2C%20Lynne%20378d0a9c%2087ed%204a43%2081ec%20d3dd185aefe3/2025-04-22%20Meeting%20with%20Ben%20Mak%2C%20Lynne%20378d0a9c%2087ed%204a43%2081ec%20d3dd185aefe3.pdf",date:"2025-04-22",title:"Meeting with Ben Mak, Lynne 378d0a9c 87ed 4a43 81ec d3dd185aefe3"},
+  {folder:"2025-04-22 ben and mabalu calls services v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-04-22%20ben%20and%20mabalu%20calls%20services%20v2/2025-04-22%20ben%20and%20mabalu%20calls%20services%20v2.pdf",date:"2025-04-22",title:"ben and mabalu calls services v2"},
+  {folder:"2025-05-05 Meeting with Ben Mak, Lynne, 1 Other",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-05-05%20Meeting%20with%20Ben%20Mak%2C%20Lynne%2C%201%20Other/2025-05-05%20Meeting%20with%20Ben%20Mak%2C%20Lynne%2C%201%20Other.pdf",date:"2025-05-05",title:"Meeting with Ben Mak, Lynne, 1 Other"},
+  {folder:"2025-05-08 Ben and Emma Bens attemps to chat v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-05-08%20Ben%20and%20Emma%20Bens%20attemps%20to%20chat%20v2/2025-05-08%20Ben%20and%20Emma%20Bens%20attemps%20to%20chat%20v2.pdf",date:"2025-05-08",title:"Ben and Emma Bens attemps to chat v2"},
+  {folder:"2025-05-14 Ben Emma",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-05-14%20Ben%20Emma/2025-05-14%20Ben%20Emma.pdf",date:"2025-05-14",title:"Ben Emma"},
+  {folder:"2025-05-14 Mabalu, Westminster Housing No help sidestepping Ambiguous withhold information",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-05-14%20Mabalu%2C%20Westminster%20Housing%20No%20help%20sidestepping%20Ambiguous%20withhold%20information/2025-05-14%20Mabalu%2C%20Westminster%20Housing%20No%20help%20sidestepping%20Ambiguous%20withhold%20information.pdf",date:"2025-05-14",title:"Mabalu, Westminster Housing No help sidestepping Ambiguous withhold information"},
+  {folder:"2025-06-02 Meeting with Ben Mak, Kajha Nainamohamed, 1 Other",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-02%20Meeting%20with%20Ben%20Mak%2C%20Kajha%20Nainamohamed%2C%201%20Other/2025-06-02%20Meeting%20with%20Ben%20Mak%2C%20Kajha%20Nainamohamed%2C%201%20Other.pdf",date:"2025-06-02",title:"Meeting with Ben Mak, Kajha Nainamohamed, 1 Other"},
+  {folder:"2025-06-10 video1804262490",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-10%20video1804262490/2025-06-10%20video1804262490.pdf",date:"2025-06-10",title:"video1804262490"},
+  {folder:"2025-06-14 Westminster Housing Mabalu",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-14%20Westminster%20Housing%20Mabalu/2025-06-14%20Westminster%20Housing%20Mabalu.pdf",date:"2025-06-14",title:"Westminster Housing Mabalu"},
+  {folder:"2025-06-17 Meeting with Ben Mak, Mabalu conteh",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-17%20Meeting%20with%20Ben%20Mak%2C%20Mabalu%20conteh/2025-06-17%20Meeting%20with%20Ben%20Mak%2C%20Mabalu%20conteh.pdf",date:"2025-06-17",title:"Meeting with Ben Mak, Mabalu conteh"},
+  {folder:"2025-06-30 Ben Mak's Personal Meeting Room",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-30%20Ben%20Mak%27s%20Personal%20Meeting%20Room/2025-06-30%20Ben%20Mak%27s%20Personal%20Meeting%20Room.pdf",date:"2025-06-30",title:"Ben Mak's Personal Meeting Room"},
+  {folder:"2025-06-30 Ben Mak's Personal Meeting Room (Grain fetch)",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-30%20Ben%20Mak%27s%20Personal%20Meeting%20Room%20%28Grain%20fetch%29/2025-06-30%20Ben%20Mak%27s%20Personal%20Meeting%20Room%20%28Grain%20fetch%29.pdf",date:"2025-06-30",title:"Ben Mak's Personal Meeting Room (Grain fetch)"},
+  {folder:"2025-06-30 Ben Maks Personal Meeting Room (Grain fetch)",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-06-30%20Ben%20Maks%20Personal%20Meeting%20Room%20%28Grain%20fetch%29/2025-06-30%20Ben%20Maks%20Personal%20Meeting%20Room%20%28Grain%20fetch%29.pdf",date:"2025-06-30",title:"Ben Maks Personal Meeting Room (Grain fetch)"},
+  {folder:"2025-07-14 Ben and Integrity",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-07-14%20Ben%20and%20Integrity/2025-07-14%20Ben%20and%20Integrity.pdf",date:"2025-07-14",title:"Ben and Integrity"},
+  {folder:"2025-07-14 Integrity v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-07-14%20Integrity%20v2/2025-07-14%20Integrity%20v2.pdf",date:"2025-07-14",title:"Integrity v2"},
+  {folder:"2025-07-14 Westminster city council v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-07-14%20Westminster%20city%20council%20v2/2025-07-14%20Westminster%20city%20council%20v2.pdf",date:"2025-07-14",title:"Westminster city council v2"},
+  {folder:"2025-07-17 Ben and Emma Westminster 2025",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-07-17%20Ben%20and%20Emma%20Westminster%202025/2025-07-17%20Ben%20and%20Emma%20Westminster%202025.pdf",date:"2025-07-17",title:"Ben and Emma Westminster 2025"},
+  {folder:"2025-08-11 Ben Mak's Personal Meeting Room",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-11%20Ben%20Mak%27s%20Personal%20Meeting%20Room/2025-08-11%20Ben%20Mak%27s%20Personal%20Meeting%20Room.pdf",date:"2025-08-11",title:"Ben Mak's Personal Meeting Room"},
+  {folder:"2025-08-11 Ben cleaning store cupboard Jade Ben",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-11%20Ben%20cleaning%20store%20cupboard%20Jade%20Ben/2025-08-11%20Ben%20cleaning%20store%20cupboard%20Jade%20Ben.pdf",date:"2025-08-11",title:"Ben cleaning store cupboard Jade Ben"},
+  {folder:"2025-08-12 Ben And Emma westminster 25+ days later",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-12%20Ben%20And%20Emma%20westminster%2025%2B%20days%20later/2025-08-12%20Ben%20And%20Emma%20westminster%2025%2B%20days%20later.pdf",date:"2025-08-12",title:"Ben And Emma westminster 25+ days later"},
+  {folder:"2025-08-12 Ben mabalu post Jade Go passage v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-12%20Ben%20mabalu%20post%20Jade%20Go%20passage%20v2/2025-08-12%20Ben%20mabalu%20post%20Jade%20Go%20passage%20v2.pdf",date:"2025-08-12",title:"Ben mabalu post Jade Go passage v2"},
+  {folder:"2025-08-12 YMllieRJ6e",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-12%20YMllieRJ6e/2025-08-12%20YMllieRJ6e.pdf",date:"2025-08-12",title:"YMllieRJ6e"},
+  {folder:"2025-08-16 Ben Jade no help no updates no support v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-16%20Ben%20Jade%20no%20help%20no%20updates%20no%20support%20v2/2025-08-16%20Ben%20Jade%20no%20help%20no%20updates%20no%20support%20v2.pdf",date:"2025-08-16",title:"Ben Jade no help no updates no support v2"},
+  {folder:"2025-08-20 SAUL Integrity Blu coming yet she was nto",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-20%20SAUL%20Integrity%20Blu%20coming%20yet%20she%20was%20nto/2025-08-20%20SAUL%20Integrity%20Blu%20coming%20yet%20she%20was%20nto.pdf",date:"2025-08-20",title:"SAUL Integrity Blu coming yet she was nto"},
+  {folder:"2025-08-21 Ben Jade ADMITTED PROVEN",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-21%20Ben%20Jade%20ADMITTED%20PROVEN/2025-08-21%20Ben%20Jade%20ADMITTED%20PROVEN.pdf",date:"2025-08-21",title:"Ben Jade ADMITTED PROVEN"},
+  {folder:"2025-08-25 Ben and Chris Torture",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-25%20Ben%20and%20Chris%20Torture/2025-08-25%20Ben%20and%20Chris%20Torture.pdf",date:"2025-08-25",title:"Ben and Chris Torture"},
+  {folder:"2025-08-27 Ben James Westminster council.",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-27%20Ben%20James%20Westminster%20council./2025-08-27%20Ben%20James%20Westminster%20council..pdf",date:"2025-08-27",title:"Ben James Westminster council."},
+  {folder:"2025-08-27 ROGER INTERIM HOUSING UNLAWFUL EVICTION v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-27%20ROGER%20INTERIM%20HOUSING%20UNLAWFUL%20EVICTION%20v2/2025-08-27%20ROGER%20INTERIM%20HOUSING%20UNLAWFUL%20EVICTION%20v2.pdf",date:"2025-08-27",title:"ROGER INTERIM HOUSING UNLAWFUL EVICTION v2"},
+  {folder:"2025-08-28 Ben Westminster Housing Solutions v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-28%20Ben%20Westminster%20Housing%20Solutions%20v2/2025-08-28%20Ben%20Westminster%20Housing%20Solutions%20v2.pdf",date:"2025-08-28",title:"Ben Westminster Housing Solutions v2"},
+  {folder:"2025-08-28 Ben and Jay Westminster Housing v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-28%20Ben%20and%20Jay%20Westminster%20Housing%20v2/2025-08-28%20Ben%20and%20Jay%20Westminster%20Housing%20v2.pdf",date:"2025-08-28",title:"Ben and Jay Westminster Housing v2"},
+  {folder:"2025-08-29 12 26 12 31 Judy Westminster Housing Solutions",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-29%2012%2026%2012%2031%20Judy%20Westminster%20Housing%20Solutions/2025-08-29%2012%2026%2012%2031%20Judy%20Westminster%20Housing%20Solutions.pdf",date:"2025-08-29",title:"12 26 12 31 Judy Westminster Housing Solutions"},
+  {folder:"2025-08-29 Ben Housing Solutions GEORGIA,JUDY Dead Monday",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-29%20Ben%20Housing%20Solutions%20GEORGIA%2CJUDY%20Dead%20Monday/2025-08-29%20Ben%20Housing%20Solutions%20GEORGIA%2CJUDY%20Dead%20Monday.pdf",date:"2025-08-29",title:"Ben Housing Solutions GEORGIA,JUDY Dead Monday"},
+  {folder:"2025-08-29 Ben Salen Westminster Housing Solutions v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-29%20Ben%20Salen%20Westminster%20Housing%20Solutions%20v2/2025-08-29%20Ben%20Salen%20Westminster%20Housing%20Solutions%20v2.pdf",date:"2025-08-29",title:"Ben Salen Westminster Housing Solutions v2"},
+  {folder:"2025-08-29 Ben Westminster Housing Solutions",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-29%20Ben%20Westminster%20Housing%20Solutions/2025-08-29%20Ben%20Westminster%20Housing%20Solutions.pdf",date:"2025-08-29",title:"Ben Westminster Housing Solutions"},
+  {folder:"2025-08-29 Ben and Malak Housing Solutions",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-08-29%20Ben%20and%20Malak%20Housing%20Solutions/2025-08-29%20Ben%20and%20Malak%20Housing%20Solutions.pdf",date:"2025-08-29",title:"Ben and Malak Housing Solutions"},
+  {folder:"2025-09-01 MAN FOLLOWS BEN TO COURT PERMITTED BY SUPPORT WORKER v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-01%20MAN%20FOLLOWS%20BEN%20TO%20COURT%20PERMITTED%20BY%20SUPPORT%20WORKER%20v2/2025-09-01%20MAN%20FOLLOWS%20BEN%20TO%20COURT%20PERMITTED%20BY%20SUPPORT%20WORKER%20v2.pdf",date:"2025-09-01",title:"MAN FOLLOWS BEN TO COURT PERMITTED BY SUPPORT WORKER v2"},
+  {folder:"2025-09-01 SUEHA Housing Solutions",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-01%20SUEHA%20Housing%20Solutions/2025-09-01%20SUEHA%20Housing%20Solutions.pdf",date:"2025-09-01",title:"SUEHA Housing Solutions"},
+  {folder:"2025-09-01 emma and Ben",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-01%20emma%20and%20Ben/2025-09-01%20emma%20and%20Ben.pdf",date:"2025-09-01",title:"emma and Ben"},
+  {folder:"2025-09-12 Emma Ben Puts phone down She glitches",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-12%20Emma%20Ben%20Puts%20phone%20down%20She%20glitches/2025-09-12%20Emma%20Ben%20Puts%20phone%20down%20She%20glitches.pdf",date:"2025-09-12",title:"Emma Ben Puts phone down She glitches"},
+  {folder:"2025-09-12 Emma accuses Ben AI and script Disclosures correction and implications",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-12%20Emma%20accuses%20Ben%20AI%20and%20script%20Disclosures%20correction%20and%20implications/2025-09-12%20Emma%20accuses%20Ben%20AI%20and%20script%20Disclosures%20correction%20and%20implications.pdf",date:"2025-09-12",title:"Emma accuses Ben AI and script Disclosures correction and implications"},
+  {folder:"2025-09-18 Jade Integrity Care Ben Housing Letter",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-18%20Jade%20Integrity%20Care%20Ben%20Housing%20Letter/2025-09-18%20Jade%20Integrity%20Care%20Ben%20Housing%20Letter.pdf",date:"2025-09-18",title:"Jade Integrity Care Ben Housing Letter"},
+  {folder:"2025-09-18 Jade Integrity Care Ben No letter Refusal to answer v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-18%20Jade%20Integrity%20Care%20Ben%20No%20letter%20Refusal%20to%20answer%20v2/2025-09-18%20Jade%20Integrity%20Care%20Ben%20No%20letter%20Refusal%20to%20answer%20v2.pdf",date:"2025-09-18",title:"Jade Integrity Care Ben No letter Refusal to answer v2"},
+  {folder:"2025-09-18 Roger Ben Westminster Social Services LETTER HOMLESS AWARENESS v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-18%20Roger%20Ben%20Westminster%20Social%20Services%20LETTER%20HOMLESS%20AWARENESS%20v2/2025-09-18%20Roger%20Ben%20Westminster%20Social%20Services%20LETTER%20HOMLESS%20AWARENESS%20v2.pdf",date:"2025-09-18",title:"Roger Ben Westminster Social Services LETTER HOMLESS AWARENESS v2"},
+  {folder:"2025-09-22 ROGER WESTMINSTER SS BEN",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-22%20ROGER%20WESTMINSTER%20SS%20BEN/2025-09-22%20ROGER%20WESTMINSTER%20SS%20BEN.pdf",date:"2025-09-22",title:"ROGER WESTMINSTER SS BEN"},
+  {folder:"2025-09-25 JADE - I DONT KNOW YOUR HOMELESS",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-25%20JADE%20-%20I%20DONT%20KNOW%20YOUR%20HOMELESS/2025-09-25%20JADE%20-%20I%20DONT%20KNOW%20YOUR%20HOMELESS.pdf",date:"2025-09-25",title:"JADE - I DONT KNOW YOUR HOMELESS"},
+  {folder:"2025-09-26 JADE INTEGRITY BEN ACCOUNT CLOSURE v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-26%20JADE%20INTEGRITY%20BEN%20ACCOUNT%20CLOSURE%20v2/2025-09-26%20JADE%20INTEGRITY%20BEN%20ACCOUNT%20CLOSURE%20v2.pdf",date:"2025-09-26",title:"JADE INTEGRITY BEN ACCOUNT CLOSURE v2"},
+  {folder:"2025-09-26 ROGER BEN CONFIRMED HOUSING",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-26%20ROGER%20BEN%20CONFIRMED%20HOUSING/2025-09-26%20ROGER%20BEN%20CONFIRMED%20HOUSING.pdf",date:"2025-09-26",title:"ROGER BEN CONFIRMED HOUSING"},
+  {folder:"2025-09-30 INTEGRITY JADE FALSE ACCOUNT OF EVENTS v2",pdf:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/s188/2025-09-30%20INTEGRITY%20JADE%20FALSE%20ACCOUNT%20OF%20EVENTS%20v2/2025-09-30%20INTEGRITY%20JADE%20FALSE%20ACCOUNT%20OF%20EVENTS%20v2.pdf",date:"2025-09-30",title:"INTEGRITY JADE FALSE ACCOUNT OF EVENTS v2"},
+];
+const EXHIBITS=[
+  {num:"01",title:"OFFICER JUDY DEATH REMARK",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_01_OFFICER_JUDY_DEATH_REMARK.png",file:"EXHIBIT_01_OFFICER_JUDY_DEATH_REMARK.png"},
+  {num:"02",title:"SUICIDAL DISCLOSURE IGNORED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_02_SUICIDAL_DISCLOSURE_IGNORED.png",file:"EXHIBIT_02_SUICIDAL_DISCLOSURE_IGNORED.png"},
+  {num:"3a",title:"YES/NO EVASION 32:06",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_3a_YES-NO_EVASION_3206.png",file:"EXHIBIT_3a_YES-NO_EVASION_3206.png"},
+  {num:"3b",title:"YES/NO EVASION 32:12",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_3b_YES-NO_EVASION_3212.png",file:"EXHIBIT_3b_YES-NO_EVASION_3212.png"},
+  {num:"3c",title:"YES/NO EVASION 33:59",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_3c_YES-NO_EVASION_3359.png",file:"EXHIBIT_3c_YES-NO_EVASION_3359.png"},
+  {num:"3d",title:"YES/NO EVASION 35:04",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_3d_YES-NO_EVASION_3504.png",file:"EXHIBIT_3d_YES-NO_EVASION_3504.png"},
+  {num:"08",title:"CRUEL TORTURE PROFESSIONAL",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_08_CRUEL_TORTURE_PROFESSIONAL.png",file:"EXHIBIT_08_CRUEL_TORTURE_PROFESSIONAL.png"},
+  {num:"6a1",title:"CRUEL DISMISSAL PHYSICAL HARM",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a1_CRUEL_DISMISSAL_PHYSICAL_HARM.png",file:"EXHIBIT_6a1_CRUEL_DISMISSAL_PHYSICAL_HARM.png"},
+  {num:"6a2",title:"ILLEGALITY HOMELESSNESS ADMITTED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a2_ILLEGALITY_OF_HOMELESSNESS_ADMITTED.png",file:"EXHIBIT_6a2_ILLEGALITY_OF_HOMELESSNESS_ADMITTED.png"},
+  {num:"6a3",title:"HOMELESS STATUS DISMISSED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a3_HOMELESS_STATUS_DISMISSED.png",file:"EXHIBIT_6a3_HOMELESS_STATUS_DISMISSED.png"},
+  {num:"6a4",title:"OBE CREDENTIALS IGNORED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a4_OBE_CREDENTIALS_IGNORED.png",file:"EXHIBIT_6a4_OBE_CREDENTIALS_IGNORED.png"},
+  {num:"6a5",title:"DUTY OF CARE DENIED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a5_DUTY_OF_CARE_DENIED.png",file:"EXHIBIT_6a5_DUTY_OF_CARE_DENIED.png"},
+  {num:"6a6",title:"WRONG LEGAL ADVICE CONFIRMED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a6_WRONG_LEGAL_ADVICE_CONFIRMED.png",file:"EXHIBIT_6a6_WRONG_LEGAL_ADVICE_CONFIRMED.png"},
+  {num:"6a7",title:"DEGRADING STATE DOCUMENTED",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6a7_DEGRADING_STATE_DOCUMENTED.png",file:"EXHIBIT_6a7_DEGRADING_STATE_DOCUMENTED.png"},
+  {num:"6b",title:"SUICIDAL IDEATION STATE ACTORS",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6b_SUICIDAL_IDEATION_STATE_ACTORS.png",file:"EXHIBIT_6b_SUICIDAL_IDEATION_STATE_ACTORS.png"},
+  {num:"6c",title:"AUTISTIC ADULT NO SUPPORT",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6c_AUTISTIC_ADULT_NO_SUPPORT.png",file:"EXHIBIT_6c_AUTISTIC_ADULT_NO_SUPPORT.png"},
+  {num:"6d",title:"STATE KNOWLEDGE 286 CONTACTS",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6d_STATE_KNOWLEDGE_286_CONTACTS.png",file:"EXHIBIT_6d_STATE_KNOWLEDGE_286_CONTACTS.png"},
+  {num:"6e",title:"FORMAL NOTICE ZERO RESPONSE",img:"https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/JUDICIAL-REVIEW-2026/s188/exhibits/EXHIBIT_6e_FORMAL_NOTICE_ZERO_RESPONSE.png",file:"EXHIBIT_6e_FORMAL_NOTICE_ZERO_RESPONSE.png"},
+];
+</script>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero-banner">
+<img src="https://tvecnfdqakrevzaeifpk.supabase.co/storage/v1/object/public/MONA/JM-HEADER.svg" class="hero-img" alt="Justice Minds Forensic Intelligence Ltd">
+</div>
+
+<!-- THREE-PANEL ROW -->
+<div class="panels-row">
+
+<!-- LEFT: TOC + SEARCH -->
+<div class="toc-panel">
+<div class="search-box">
+    <label class="search-label" for="searchInput">Search transcript text</label>
+    <input type="text" id="searchInput" placeholder="e.g. homeless, suicidal, torture...">
+    <div id="matchCount"></div>
+</div>
+<div class="mode-tabs">
+    <div class="mode-tab active" id="tabTranscripts" onclick="switchTab('transcripts')">Transcripts (102)</div>
+    <div class="mode-tab" id="tabExhibits" onclick="switchTab('exhibits')">Exhibits (18)</div>
+</div>
+<div class="stats-bar">
+    <span id="statsLabel">Westminster JR Evidence</span>
+    <span id="statsPages"></span>
+</div>
+<div class="toc-list" id="tocList"></div>
+</div>
+
+<!-- CENTRE: VIEWER -->
+<div class="viewer-panel" id="viewerPanel">
+<div class="empty-state">
+    <strong>Westminster JR Forensic Evidence Viewer</strong><br>
+    102 Grain transcripts from Supabase s188 bucket<br><br>
+    Select a transcript from the left panel to load and view the PDF.<br>
+    Search text across all pages with full-text highlighting.<br><br>
+    <span style="font-size:12px;color:var(--grey-2)">PDF.js rendering at 2x resolution</span>
+</div>
+</div>
+
+<!-- RIGHT: EVIDENCE COLUMN -->
+<div class="evidence-panel">
+<div class="ev-header">
+    <div class="ev-header-left">Evidence <span class="ev-count" id="evCount">0</span></div>
+    <button class="ev-download" id="evUpload" disabled onclick="uploadAll()" style="background:#1d70b8;margin-right:4px">SAVE TO SUPABASE</button>
+    <button class="ev-download" id="evDownload" disabled onclick="downloadAll()">PDF</button>
+</div>
+<div class="ev-list" id="evList">
+    <div class="ev-empty">Hit &#8853; Copy on any page to pin it here as evidence.</div>
+</div>
+</div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+<img id="lightboxImg" src="">
+</div>
+
+<div class="kb">&uarr;&darr; scroll &nbsp;|&nbsp; type to search &nbsp;|&nbsp; &#8853; to pin evidence</div>
+
+<script>
+(function(){
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const viewer=document.getElementById('viewerPanel');
+const tocList=document.getElementById('tocList');
+const evList=document.getElementById('evList');
+const evCount=document.getElementById('evCount');
+const evDl=document.getElementById('evDownload');
+const statsLabel=document.getElementById('statsLabel');
+const statsPages=document.getElementById('statsPages');
+
+let currentTab='transcripts';
+let currentPdf=null; // {folder, url, doc, pages:[{canvas,textItems}]}
+let pageTextData=[]; // per-page text items for search
+let pinnedPages=[];
+let currentQuery='';
+
+// ── TAB SWITCHING ──
+window.switchTab=function(tab){
+    currentTab=tab;
+    document.getElementById('tabTranscripts').classList.toggle('active',tab==='transcripts');
+    document.getElementById('tabExhibits').classList.toggle('active',tab==='exhibits');
+    renderToc();
+};
+
+// ── RENDER TOC ──
+function renderToc(){
+    tocList.innerHTML='';
+    if(currentTab==='transcripts'){
+        TRANSCRIPTS.forEach((t,i)=>{
+            const item=document.createElement('div');
+            item.className='toc-item';
+            item.id='toc-t-'+i;
+            item.innerHTML='<span class="toc-date">'+esc(t.date)+'</span><span class="toc-title">'+esc(t.title)+'</span><span class="match-badge" id="badge-t-'+i+'"></span>';
+            item.onclick=()=>loadTranscript(i);
+            tocList.appendChild(item);
+        });
+    } else {
+        EXHIBITS.forEach((ex,i)=>{
+            const card=document.createElement('div');
+            card.className='ex-card';
+            card.innerHTML='<span class="ex-num">'+esc(ex.num)+'</span><span class="ex-label">'+esc(ex.title)+'</span>';
+            card.onclick=()=>showExhibit(i);
+            tocList.appendChild(card);
+        });
+    }
+}
+
+// ── LOAD TRANSCRIPT PDF ──
+async function loadTranscript(idx){
+    const t=TRANSCRIPTS[idx];
+    document.querySelectorAll('.toc-item').forEach(el=>el.classList.remove('active'));
+    const tocEl=document.getElementById('toc-t-'+idx);
+    if(tocEl) tocEl.classList.add('active');
+
+    viewer.innerHTML='<div class="loading"><div class="spinner"></div>Loading '+esc(t.folder)+'...</div>';
+    statsLabel.textContent=t.folder;
+    statsPages.textContent='Loading...';
+    pageTextData=[];
+
+    try{
+        const loadingTask=pdfjsLib.getDocument(t.pdf);
+        const doc=await loadingTask.promise;
+        const numPages=doc.numPages;
+        statsPages.textContent=numPages+' pages';
+        viewer.innerHTML='';
+
+        for(let p=1;p<=numPages;p++){
+            const page=await doc.getPage(p);
+            const scale=2;
+            const vp=page.getViewport({scale});
+
+            const wrapper=document.createElement('div');
+            wrapper.className='page-wrapper';
+            wrapper.id='wrapper-'+p;
+
+            const label=document.createElement('div');
+            label.className='page-label';
+            label.textContent='Page '+p+' of '+numPages;
+
+            const pageDiv=document.createElement('div');
+            pageDiv.className='evidence-page';
+            pageDiv.id='page-'+p;
+
+            const canvas=document.createElement('canvas');
+            canvas.width=vp.width;
+            canvas.height=vp.height;
+            const ctx=canvas.getContext('2d');
+            await page.render({canvasContext:ctx,viewport:vp}).promise;
+
+            // Extract text for search
+            const textContent=await page.getTextContent();
+            const items=textContent.items.map(item=>{
+                const tx=item.transform;
+                return {
+                    str:item.str,
+                    x:tx[4]/vp.width*100,
+                    y:(vp.height-tx[5]-item.height*scale)/vp.height*100,
+                    w:item.width*scale/vp.width*100,
+                    h:item.height*scale/vp.height*100
+                };
+            });
+            pageTextData.push({pageNum:p, items, fullText:items.map(i=>i.str).join(' ')});
+
+            // Copy button
+            const copyBtn=document.createElement('button');
+            copyBtn.className='page-copy-btn';
+            copyBtn.textContent='\u2295 Copy';
+            copyBtn.addEventListener('click',()=>copyPage(p, t.folder));
+
+            pageDiv.appendChild(canvas);
+            pageDiv.appendChild(copyBtn);
+            wrapper.appendChild(label);
+            wrapper.appendChild(pageDiv);
+            viewer.appendChild(wrapper);
+        }
+
+        currentPdf={folder:t.folder, url:t.pdf, numPages};
+        if(currentQuery) performSearch();
+    } catch(e){
+        viewer.innerHTML='<div class="empty-state" style="color:var(--red)"><strong>Error loading PDF</strong><br>'+esc(e.message)+'<br><br><a href="'+esc(t.pdf)+'" target="_blank" style="color:var(--blue)">Try opening directly</a></div>';
+    }
+}
+
+// ── SHOW EXHIBIT PNG ──
+function showExhibit(idx){
+    const ex=EXHIBITS[idx];
+    viewer.innerHTML='<div class="page-wrapper"><div class="page-label">EXHIBIT '+esc(ex.num)+' &mdash; '+esc(ex.title)+'</div><div class="evidence-page" style="cursor:zoom-in" onclick="document.getElementById(\'lightbox\').classList.add(\'open\');document.getElementById(\'lightboxImg\').src=this.querySelector(\'img\').src"><img src="'+esc(ex.img)+'" style="display:block;max-height:calc(100vh - 200px);max-width:calc(100vw - 600px);width:auto;height:auto"></div><div style="margin-top:8px;font-size:11px;color:var(--grey-1)">'+esc(ex.file)+'</div></div>';
+    statsLabel.textContent='EXHIBIT '+ex.num;
+    statsPages.textContent=ex.title;
+}
+window.showExhibit=showExhibit;
+
+// ── SEARCH ──
+function performSearch(){
+    const query=document.getElementById('searchInput').value.toLowerCase().trim();
+    currentQuery=query;
+
+    // Clear highlights
+    document.querySelectorAll('.highlight-box').forEach(el=>el.remove());
+    document.querySelectorAll('.toc-item').forEach(i=>{i.classList.remove('has-match');const b=i.querySelector('.match-badge');if(b)b.style.display='none';});
+
+    if(query.length<2){document.getElementById('matchCount').textContent='';return;}
+
+    if(currentTab==='transcripts' && !currentPdf){
+        document.getElementById('matchCount').textContent='Load a transcript first';
+        return;
+    }
+
+    let totalMatches=0, matchedPages=0, firstPage=null;
+
+    pageTextData.forEach(pd=>{
+        const pageDiv=document.getElementById('page-'+pd.pageNum);
+        if(!pageDiv) return;
+        let count=0;
+
+        pd.items.forEach(item=>{
+            if(item.str.toLowerCase().includes(query)){
+                count++;
+                const hl=document.createElement('div');
+                hl.className='highlight-box';
+                hl.style.left=item.x+'%';
+                hl.style.top=item.y+'%';
+                hl.style.width=Math.max(item.w,2)+'%';
+                hl.style.height=Math.max(item.h,1.5)+'%';
+                pageDiv.appendChild(hl);
+            }
+        });
+
+        if(count>0){
+            totalMatches+=count;
+            matchedPages++;
+            if(!firstPage) firstPage=pd.pageNum;
+        }
+    });
+
+    document.getElementById('matchCount').textContent=totalMatches
+        ? totalMatches+' match'+(totalMatches!==1?'es':'')+' across '+matchedPages+' page'+(matchedPages!==1?'s':'')
+        : 'no matches in this transcript';
+
+    if(firstPage){
+        const el=document.getElementById('wrapper-'+firstPage);
+        if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+}
+
+document.getElementById('searchInput').addEventListener('input',performSearch);
+document.getElementById('searchInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+        const hls=[...document.querySelectorAll('.highlight-box')];
+        if(!hls.length) return;
+        // cycle through highlighted pages
+        hls[0].scrollIntoView({behavior:'smooth',block:'center'});
+    }
+});
+
+// ── COPY / PIN ──
+function copyPage(pageNum, folder){
+    const pageDiv=document.getElementById('page-'+pageNum);
+    const canvas=pageDiv?pageDiv.querySelector('canvas'):null;
+    if(!canvas) return;
+    const hls=[...pageDiv.querySelectorAll('.highlight-box')];
+    const bboxes=hls.map(el=>({
+        x:parseFloat(el.style.left),y:parseFloat(el.style.top),
+        w:parseFloat(el.style.width),h:parseFloat(el.style.height)
+    }));
+    pinnedPages.push({
+        page:pageNum,
+        query:currentQuery||'(no search)',
+        bboxes,
+        dataUrl:canvas.toDataURL('image/jpeg',0.85),
+        folder:folder||'',
+        totalPages:currentPdf?currentPdf.numPages:0
+    });
+    renderEvidence();
+}
+
+function removePin(idx){pinnedPages.splice(idx,1);renderEvidence();}
+
+function renderEvidence(){
+    evCount.textContent=pinnedPages.length;
+    evDl.disabled=pinnedPages.length===0;
+    document.getElementById('evUpload').disabled=pinnedPages.length===0;
+    if(!pinnedPages.length){evList.innerHTML='<div class="ev-empty">Hit &#8853; Copy on any page to pin it here.</div>';return;}
+    evList.innerHTML='';
+    pinnedPages.forEach((entry,idx)=>{
+        const item=document.createElement('div');item.className='ev-item';
+        const head=document.createElement('div');head.className='ev-item-head';
+        head.innerHTML='<span class="ev-num-badge">'+(idx+1)+'</span><button class="ev-rm" title="Remove">&times;</button>';
+        head.querySelector('.ev-rm').addEventListener('click',()=>removePin(idx));
+        const thumb=document.createElement('div');thumb.className='ev-thumb';
+        const tImg=document.createElement('img');tImg.src=entry.dataUrl;thumb.appendChild(tImg);
+        entry.bboxes.forEach(bb=>{
+            const hl=document.createElement('div');hl.className='ev-hl';
+            hl.style.left=bb.x+'%';hl.style.top=bb.y+'%';hl.style.width=bb.w+'%';hl.style.height=bb.h+'%';
+            thumb.appendChild(hl);
+        });
+        const banner=document.createElement('div');banner.className='ev-banner';
+        banner.innerHTML='<span>'+esc(entry.query)+'</span><span>Exhibit '+(idx+1)+'</span>';
+        thumb.appendChild(banner);
+        const notes=document.createElement('div');notes.className='ev-notes';
+        notes.textContent=entry.folder+' | "'+entry.query+'" | Page '+entry.page+' of '+entry.totalPages;
+        if(entry.supabaseUrl){
+            const link=document.createElement('a');
+            link.href=entry.supabaseUrl;link.target='_blank';
+            link.style.cssText='display:block;font-size:9px;color:#1d70b8;margin-top:3px;word-break:break-all';
+            link.textContent=entry.supabaseUrl;
+            notes.appendChild(link);
+        }
+        item.appendChild(head);item.appendChild(thumb);item.appendChild(notes);evList.appendChild(item);
+    });
+}
+
+// ── SUPABASE CONFIG ──
+const SUPA_URL='https://tvecnfdqakrevzaeifpk.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2ZWNuZmRxYWtyZXZ6YWVpZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzODIwNjQsImV4cCI6MjA2Mzk1ODA2NH0.q-8ukkJZ4FGSbZyEYp0letP-S58hC2PA6lUOWUH9H2Y';
+const SUPA_BUCKET='JUDICIAL-REVIEW-2026';
+
+// ── RENDER EXHIBIT PNG (canvas with highlights + banner + footer baked in) ──
+function renderExhibitPng(entry, exhibitNum){
+    return new Promise(resolve=>{
+        const img=new Image();
+        img.onload=()=>{
+            const bannerH=60, footerH=40;
+            const w=img.naturalWidth, h=img.naturalHeight;
+            const canvas=document.createElement('canvas');
+            canvas.width=w;
+            canvas.height=bannerH+h+footerH;
+            const ctx=canvas.getContext('2d');
+
+            // Banner
+            ctx.fillStyle='#0b0c0c';
+            ctx.fillRect(0,0,w,bannerH);
+            ctx.fillStyle='#ffffff';
+            ctx.font='bold 24px "Helvetica Neue",Arial,sans-serif';
+            ctx.textBaseline='middle';
+            ctx.fillText('EXHIBIT '+exhibitNum,20,bannerH/2);
+            const titleText=entry.query.toUpperCase();
+            const tw=ctx.measureText(titleText).width;
+            ctx.fillText(titleText,w-tw-20,bannerH/2);
+
+            // Page image
+            ctx.drawImage(img,0,bannerH);
+
+            // Highlights baked in
+            ctx.globalCompositeOperation='darken';
+            ctx.fillStyle='rgba(255,221,0,0.5)';
+            entry.bboxes.forEach(bb=>{
+                ctx.fillRect(bb.x/100*w, bannerH+bb.y/100*h, bb.w/100*w, bb.h/100*h);
+            });
+            ctx.globalCompositeOperation='source-over';
+
+            // Orange borders
+            ctx.strokeStyle='rgba(255,102,0,0.8)';
+            ctx.lineWidth=3;
+            entry.bboxes.forEach(bb=>{
+                ctx.strokeRect(bb.x/100*w-2, bannerH+bb.y/100*h-2, bb.w/100*w+4, bb.h/100*h+4);
+            });
+
+            // Footer
+            const fy=bannerH+h;
+            ctx.fillStyle='#f5f5f5';
+            ctx.fillRect(0,fy,w,footerH);
+            ctx.strokeStyle='#cccccc';
+            ctx.lineWidth=1;
+            ctx.beginPath();ctx.moveTo(0,fy);ctx.lineTo(w,fy);ctx.stroke();
+            ctx.fillStyle='#555555';
+            ctx.font='12px "Courier New",monospace';
+            ctx.textBaseline='middle';
+            ctx.fillText(entry.folder,12,fy+footerH/2);
+            const pageLabel='Page '+entry.page+' of '+entry.totalPages;
+            const pw=ctx.measureText(pageLabel).width;
+            ctx.fillText(pageLabel,w-pw-12,fy+footerH/2);
+
+            canvas.toBlob(blob=>resolve(blob),'image/png');
+        };
+        img.src=entry.dataUrl;
+    });
+}
+
+// ── UPLOAD ALL TO SUPABASE ──
+window.uploadAll=async function(){
+    if(!pinnedPages.length) return;
+    const btn=document.getElementById('evUpload');
+    btn.disabled=true;
+    btn.textContent='Uploading...';
+
+    const ts=Date.now();
+    const folderName='exhibits-'+ts;
+    const results=[];
+
+    for(let i=0;i<pinnedPages.length;i++){
+        const entry=pinnedPages[i];
+        const exhibitNum=i+1;
+        btn.textContent='Uploading '+(i+1)+'/'+pinnedPages.length+'...';
+
+        const blob=await renderExhibitPng(entry, exhibitNum);
+        const safeName=entry.query.replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
+        const fileName='EXHIBIT_'+String(exhibitNum).padStart(2,'0')+'_'+safeName+'.png';
+        const path='s188/'+folderName+'/'+fileName;
+
+        try{
+            const resp=await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+path,{
+                method:'POST',
+                headers:{
+                    'Authorization':'Bearer '+SUPA_KEY,
+                    'Content-Type':'image/png',
+                    'x-upsert':'true'
+                },
+                body:blob
+            });
+            if(resp.ok){
+                const publicUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+path;
+                results.push({num:exhibitNum,url:publicUrl,file:fileName,entry});
+                // Update the pinned entry with its permanent URL
+                entry.supabaseUrl=publicUrl;
+            } else {
+                const err=await resp.text();
+                results.push({num:exhibitNum,error:err,file:fileName});
+            }
+        }catch(e){
+            results.push({num:exhibitNum,error:e.message,file:fileName});
+        }
+    }
+
+    // Show results
+    btn.textContent='SAVE TO SUPABASE';
+    btn.disabled=false;
+
+    // Update evidence list with URLs
+    renderEvidence();
+
+    // Show URL summary modal
+    const urls=results.filter(r=>r.url).map(r=>'EXHIBIT '+r.num+': '+r.url).join('\\n');
+    const errors=results.filter(r=>r.error);
+
+    const summary=document.createElement('div');
+    summary.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:2px solid #0b0c0c;border-radius:8px;padding:24px;z-index:10000;max-width:700px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3)';
+    summary.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0">Uploaded '+results.filter(r=>r.url).length+'/'+pinnedPages.length+' Exhibits</h3><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button></div>'
+        +'<div style="font-size:11px;color:#555;margin-bottom:12px">Folder: '+SUPA_BUCKET+'/s188/'+folderName+'/</div>'
+        +'<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:12px">'
+        +results.filter(r=>r.url).map(r=>'<div style="margin-bottom:8px;font-size:12px"><strong>EXHIBIT '+r.num+'</strong> <a href="'+r.url+'" target="_blank" style="color:#1d70b8;word-break:break-all">'+r.url+'</a></div>').join('')
+        +'</div>'
+        +'<button onclick="navigator.clipboard.writeText(`'+urls.replace(/`/g,"\\`")+'`);this.textContent=\\'Copied!\\'" style="background:#1d70b8;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:700">Copy All URLs</button>'
+        +(errors.length?'<div style="color:#d4351c;margin-top:12px;font-size:11px">'+errors.map(e=>'Exhibit '+e.num+': '+e.error).join('<br>')+'</div>':'');
+    document.body.appendChild(summary);
+};
+
+// ── DOWNLOAD ──
+window.downloadAll=function(){
+    if(!pinnedPages.length) return;
+    const dateStr=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const tocRows=pinnedPages.map((e,i)=>'<tr><td><strong>Exhibit '+(i+1)+'</strong></td><td>'+esc(e.folder)+'</td><td>'+e.page+'</td><td style="font-size:10pt;font-style:italic">"'+esc(e.query)+'"</td></tr>').join('');
+    const pages=pinnedPages.map((e,i)=>'<div class="page-break"></div><div class="exhibit-page"><div class="exhibit-banner"><span>'+esc(e.query.toUpperCase())+'</span><span>EXHIBIT '+(i+1)+'</span></div><div class="exhibit-body"><img src="'+e.dataUrl+'" class="exhibit-img"></div><div class="exhibit-footer">'+esc(e.folder)+' | "'+esc(e.query)+'" | Page '+e.page+' of '+e.totalPages+'</div></div>').join('');
+    const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Westminster JR Evidence Bundle</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;padding:0;font-family:"Times New Roman",serif;font-size:12pt;line-height:1.5;color:#000}.toc-page{padding:2.5cm 2cm 2cm}.toc-title{text-align:center;margin-bottom:28px}.toc-title h1{font-size:20pt;margin-bottom:6px}.toc-title .sub{font-size:13pt;font-weight:normal;color:#333}.toc-title .dt{font-size:10pt;color:#666;margin-top:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f5f5f5;font-size:10pt}td{font-size:11pt}.page-break{page-break-before:always}.exhibit-page{display:flex;flex-direction:column;height:29.7cm;page-break-inside:avoid}.exhibit-banner{background:#0b0c0c;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 2cm;font-weight:bold;font-size:14pt;font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:.05em;flex-shrink:0}.exhibit-body{flex:1;display:flex;align-items:center;justify-content:center;padding:.6cm 2cm;overflow:hidden}.exhibit-img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 1px 6px rgba(0,0,0,.15)}.exhibit-footer{flex-shrink:0;border-top:1px solid #ccc;padding:.4cm 2cm;font-size:9pt;color:#555;font-family:"Helvetica Neue",Arial,sans-serif}</style></head><body><div class="toc-page"><div class="toc-title"><h1>WESTMINSTER JR EVIDENCE BUNDLE</h1><div class="sub">Ben Mak v Westminster City Council</div><div class="dt">Generated: '+dateStr+'</div></div><h3 style="font-size:13pt;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:5px">Index of Exhibits</h3><table><thead><tr><th style="width:70px">Exhibit</th><th>Document</th><th style="width:42px">Page</th><th>Highlighted Text</th></tr></thead><tbody>'+tocRows+'</tbody></table></div>'+pages+'</body></html>';
+    const blob=new Blob([html],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const w=window.open(url,'_blank');
+    if(w)w.onload=()=>setTimeout(()=>w.print(),600);
+};
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+renderToc();
+})();
+</script>
+</body>
+</html>
