@@ -666,7 +666,7 @@ window.uploadAll=async function(){
         +'<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:12px">'
         +results.filter(r=>r.url).map(r=>'<div style="margin-bottom:8px;font-size:12px"><strong>EXHIBIT '+r.num+'</strong> <a href="'+r.url+'" target="_blank" style="color:#1d70b8;word-break:break-all">'+r.url+'</a></div>').join('')
         +'</div>'
-        +'<button onclick="navigator.clipboard.writeText(`'+urls.replace(/`/g,"\\`")+'`);this.textContent=\\'Copied!\\'" style="background:#1d70b8;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:700">Copy All URLs</button>'
+        +'<button onclick="navigator.clipboard.writeText(`'+urls.replace(/`/g,"\\`")+'`);this.textContent=&quot;Copied!&quot;" style="background:#1d70b8;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:700">Copy All URLs</button>'
         +(errors.length?'<div style="color:#d4351c;margin-top:12px;font-size:11px">'+errors.map(e=>'Exhibit '+e.num+': '+e.error).join('<br>')+'</div>':'');
     document.body.appendChild(summary);
 };
