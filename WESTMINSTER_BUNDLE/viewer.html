@@ -94,6 +94,22 @@ input[type="text"]:focus{outline:3px solid var(--focus);outline-offset:0;border-
 ::-webkit-scrollbar-thumb{background:var(--grey-2);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--grey-1)}
 .kb{position:fixed;bottom:10px;right:256px;font-size:11px;color:var(--grey-1);pointer-events:none;z-index:100;background:rgba(255,255,255,.88);padding:4px 10px;border-radius:3px;border:1px solid var(--grey-3)}
+.mobile-nav{display:none}
+@media(max-width:768px){
+.hero-img{max-height:40px;object-fit:cover;object-position:left}
+.panels-row{flex-direction:column;overflow:visible}
+.toc-panel,.viewer-panel,.evidence-panel{width:100%;height:100%;position:absolute;top:0;left:0;border:none;overflow-y:auto}
+.toc-panel{z-index:3}
+.viewer-panel{z-index:2;padding:8px}
+.evidence-panel{z-index:1}
+.toc-panel.mob-hidden,.viewer-panel.mob-hidden,.evidence-panel.mob-hidden{display:none}
+.evidence-page canvas{max-width:100%;max-height:none}
+.mobile-nav{display:flex;flex-shrink:0;background:var(--black);border-top:2px solid var(--blue)}
+.mob-tab{flex:1;padding:10px 0;text-align:center;color:var(--grey-2);font-size:12px;font-weight:700;cursor:pointer;border:none;background:none;font-family:inherit}
+.mob-tab.active{color:var(--white);background:var(--blue)}
+.kb{display:none}
+.panels-row{position:relative;flex:1}
+}
 </style>
 <script>
 const TRANSCRIPTS=[
@@ -275,6 +291,11 @@ const EXHIBITS=[
 </div>
 
 </div>
+<div class="mobile-nav">
+<button class="mob-tab active" onclick="mobSwitch('toc',this)">Transcripts</button>
+<button class="mob-tab" onclick="mobSwitch('viewer',this)">Viewer</button>
+<button class="mob-tab" onclick="mobSwitch('evidence',this)">Evidence</button>
+</div>
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
@@ -296,6 +317,13 @@ const statsLabel=document.getElementById('statsLabel');
 const statsPages=document.getElementById('statsPages');
 
 let currentTab='transcripts';
+function mobSwitch(panel,btn){
+    document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    const map={toc:'.toc-panel',viewer:'.viewer-panel',evidence:'.evidence-panel'};
+    Object.values(map).forEach(s=>document.querySelector(s).classList.add('mob-hidden'));
+    document.querySelector(map[panel]).classList.remove('mob-hidden');
+}
 let currentPdf=null; // {folder, url, doc, pages:[{canvas,textItems}]}
 let pageTextData=[]; // per-page text items for search
 let pinnedPages=[];
@@ -341,7 +369,7 @@ function renderToc(){
             item.className='toc-item';
             item.id='toc-t-'+i;
             item.innerHTML='<span class="toc-date">'+esc(t.date)+'</span><span class="toc-title">'+esc(t.title)+'</span><span class="match-badge" id="badge-t-'+i+'"></span>';
-            item.onclick=()=>loadTranscript(i);
+            item.onclick=()=>{loadTranscript(i);if(window.innerWidth<=768){const b=document.querySelectorAll('.mob-tab');mobSwitch('viewer',b[1]);}};
             tocList.appendChild(item);
         });
     } else {
