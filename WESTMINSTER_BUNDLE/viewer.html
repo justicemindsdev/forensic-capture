@@ -300,26 +300,27 @@ let pageTextData=[]; // per-page text items for search
 let pinnedPages=[];
 let currentQuery='';
 let csvIndex=null;
-let csvLoading=false;
+let csvIndexPromise=null;
 
 // ── BUILD CSV INDEX FOR CROSS-TRANSCRIPT SEARCH ──
-async function buildCsvIndex(){
-    if(csvIndex) return csvIndex;
-    if(csvLoading) return null;
-    csvLoading=true;
-    document.getElementById('matchCount').textContent='Building search index (102 transcripts)…';
-    csvIndex=new Array(TRANSCRIPTS.length).fill('');
-    const batch=12;
-    for(let b=0;b<TRANSCRIPTS.length;b+=batch){
-        const chunk=TRANSCRIPTS.slice(b,b+batch);
-        const results=await Promise.allSettled(chunk.map(t=>
-            fetch(t.pdf.replace(/\.pdf$/,'.csv')).then(r=>r.ok?r.text():'')
-        ));
-        results.forEach((r,i)=>{csvIndex[b+i]=r.status==='fulfilled'?r.value:'';});
-        document.getElementById('matchCount').textContent='Indexing… '+(Math.min(b+batch,TRANSCRIPTS.length))+'/'+TRANSCRIPTS.length;
-    }
-    csvLoading=false;
-    return csvIndex;
+function buildCsvIndex(){
+    if(csvIndex) return Promise.resolve(csvIndex);
+    if(csvIndexPromise) return csvIndexPromise;
+    csvIndexPromise=(async()=>{
+        document.getElementById('matchCount').textContent='Building search index (102 transcripts)…';
+        csvIndex=new Array(TRANSCRIPTS.length).fill('');
+        const batch=15;
+        for(let b=0;b<TRANSCRIPTS.length;b+=batch){
+            const chunk=TRANSCRIPTS.slice(b,b+batch);
+            const results=await Promise.allSettled(chunk.map(t=>
+                fetch(t.pdf.replace(/\.pdf$/,'.csv')).then(r=>r.ok?r.text():'')
+            ));
+            results.forEach((r,i)=>{csvIndex[b+i]=r.status==='fulfilled'?r.value:'';});
+            document.getElementById('matchCount').textContent='Indexing… '+(Math.min(b+batch,TRANSCRIPTS.length))+'/'+TRANSCRIPTS.length;
+        }
+        return csvIndex;
+    })();
+    return csvIndexPromise;
 }
 
 // ── TAB SWITCHING ──
