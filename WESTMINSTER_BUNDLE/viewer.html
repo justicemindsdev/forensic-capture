@@ -478,34 +478,114 @@ async function performSearch(){
         ? totalHits+' match'+(totalHits!==1?'es':'')+' across '+totalTranscripts+' transcript'+(totalTranscripts!==1?'s':'')
         : 'No matches across transcripts';
 
-    // Also highlight within currently loaded PDF
-    highlightCurrentPdf();
+    // Auto-load ALL matching pages from ALL matching transcripts into viewer
+    loadAllMatches(query,re);
+}
+
+let searchAbort=null;
+async function loadAllMatches(query,re){
+    if(searchAbort) searchAbort.abort=true;
+    const ctrl={abort:false};searchAbort=ctrl;
+
+    // Find which transcripts matched
+    const matchedIdx=[];
+    TRANSCRIPTS.forEach((t,i)=>{if((csvIndex[i].toLowerCase().match(re)||[]).length>0) matchedIdx.push(i);});
+    if(!matchedIdx.length){viewer.innerHTML='<div class="empty-state">No matches found.</div>';return;}
+
+    viewer.innerHTML='<div class="loading"><div class="spinner"></div>Loading matches from '+matchedIdx.length+' transcripts…</div>';
+    pageTextData=[];
+    let resultCount=0;
+    const resultsContainer=document.createElement('div');
+    resultsContainer.id='search-results';
+    viewer.innerHTML='';
+    viewer.appendChild(resultsContainer);
+
+    for(const ti of matchedIdx){
+        if(ctrl.abort) return;
+        const t=TRANSCRIPTS[ti];
+        try{
+            const doc=await pdfjsLib.getDocument(t.pdf).promise;
+            for(let p=1;p<=doc.numPages;p++){
+                if(ctrl.abort) return;
+                const page=await doc.getPage(p);
+                const vp=page.getViewport({scale:2});
+                const textContent=await page.getTextContent();
+                // Check if page contains query
+                const fullText=textContent.items.map(it=>it.str).join(' ').toLowerCase();
+                if(!fullText.includes(query)) continue;
+
+                resultCount++;
+                const wrapper=document.createElement('div');wrapper.className='page-wrapper';
+                wrapper.id='res-'+ti+'-'+p;
+                const label=document.createElement('div');label.className='page-label';
+                label.innerHTML='<strong style="color:#1d70b8">'+esc(t.date)+' '+esc(t.title)+'</strong> — Page '+p+' of '+doc.numPages;
+                const pageDiv=document.createElement('div');pageDiv.className='evidence-page';
+                pageDiv.id='rpage-'+ti+'-'+p;
+
+                const canvas=document.createElement('canvas');
+                canvas.width=vp.width;canvas.height=vp.height;
+                await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+
+                // Add highlights
+                textContent.items.forEach(item=>{
+                    if(!item.str.toLowerCase().includes(query)) return;
+                    const tr=pdfjsLib.Util.transform(vp.transform,item.transform);
+                    const fh=Math.sqrt(tr[0]*tr[0]+tr[1]*tr[1]);
+                    const hl=document.createElement('div');hl.className='highlight-box';
+                    hl.style.left=(tr[4]/vp.width*100)+'%';
+                    hl.style.top=((tr[5]-fh)/vp.height*100)+'%';
+                    hl.style.width=Math.max(item.width*2/vp.width*100,2)+'%';
+                    hl.style.height=(fh*1.15/vp.height*100)+'%';
+                    pageDiv.appendChild(hl);
+                });
+
+                // Copy button
+                const copyBtn=document.createElement('button');copyBtn.className='page-copy-btn';
+                copyBtn.textContent='\u2295 Copy';
+                copyBtn.addEventListener('click',(function(pn,folder,np){return function(){copyPage2(this.closest('.evidence-page'),pn,folder,np);};})(p,t.folder,doc.numPages));
+
+                pageDiv.appendChild(canvas);pageDiv.appendChild(copyBtn);
+                wrapper.appendChild(label);wrapper.appendChild(pageDiv);
+                resultsContainer.appendChild(wrapper);
+
+                statsPages.textContent=resultCount+' matching pages loaded';
+            }
+        }catch(e){/* skip failed PDFs */}
+        statsLabel.textContent='Loaded '+(matchedIdx.indexOf(ti)+1)+'/'+matchedIdx.length+' transcripts';
+    }
+    statsPages.textContent=resultCount+' matching pages';
+    if(!resultCount) viewer.innerHTML='<div class="empty-state">No page-level matches found.</div>';
+}
+
+// Copy from search results (works with dynamically rendered pages)
+function copyPage2(pageDiv,pageNum,folder,totalPages){
+    const canvas=pageDiv.querySelector('canvas');
+    if(!canvas) return;
+    const hls=[...pageDiv.querySelectorAll('.highlight-box')];
+    pinnedPages.push({
+        page:pageNum,query:currentQuery||'(no search)',
+        bboxes:hls.map(el=>({x:parseFloat(el.style.left),y:parseFloat(el.style.top),w:parseFloat(el.style.width),h:parseFloat(el.style.height)})),
+        dataUrl:canvas.toDataURL('image/jpeg',0.85),
+        folder:folder||'',totalPages:totalPages||0
+    });
+    renderEvidence();
 }
 
 function highlightCurrentPdf(){
     document.querySelectorAll('.highlight-box').forEach(el=>el.remove());
     if(currentQuery.length<2||!pageTextData.length) return;
-    let firstPage=null;
     pageTextData.forEach(pd=>{
         const pageDiv=document.getElementById('page-'+pd.pageNum);
         if(!pageDiv) return;
         pd.items.forEach(item=>{
             if(item.str.toLowerCase().includes(currentQuery)){
-                const hl=document.createElement('div');
-                hl.className='highlight-box';
-                hl.style.left=item.x+'%';
-                hl.style.top=item.y+'%';
-                hl.style.width=Math.max(item.w,2)+'%';
-                hl.style.height=Math.max(item.h,1.5)+'%';
+                const hl=document.createElement('div');hl.className='highlight-box';
+                hl.style.left=item.x+'%';hl.style.top=item.y+'%';
+                hl.style.width=Math.max(item.w,2)+'%';hl.style.height=Math.max(item.h,1.5)+'%';
                 pageDiv.appendChild(hl);
-                if(!firstPage) firstPage=pd.pageNum;
             }
         });
     });
-    if(firstPage){
-        const el=document.getElementById('wrapper-'+firstPage);
-        if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
-    }
 }
 
 document.getElementById('searchInput').addEventListener('input',function(){
