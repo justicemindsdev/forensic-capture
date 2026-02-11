@@ -412,6 +412,23 @@ async function loadTranscript(idx){
             });
             pageTextData.push({pageNum:p, items, fullText:items.map(i=>i.str).join(' ')});
 
+            // Grain timestamp links for single-transcript view
+            const tIdx2=TRANSCRIPTS.findIndex(tr=>tr.folder===t.folder);
+            const grainBase2=(csvIndex&&tIdx2>=0&&csvIndex[tIdx2])?(csvIndex[tIdx2].match(/https:\/\/grain\.com\/share\/recording\/[^?,\s]+\/[^?,\s]+/)||[''])[0]:'';
+            if(grainBase2){
+                items.forEach(item=>{
+                    const tsM=item.str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)$/);
+                    if(!tsM) return;
+                    const pts=tsM[1].split(':').map(Number);
+                    const secs=pts.length===3?pts[0]*3600+pts[1]*60+pts[2]:pts[0]*60+pts[1];
+                    const a=document.createElement('a');
+                    a.href=grainBase2+'?t='+secs*1000;a.target='_blank';
+                    a.style.cssText='position:absolute;left:'+item.x+'%;top:'+item.y+'%;width:'+item.w+'%;height:'+item.h+'%;z-index:15;cursor:pointer';
+                    a.title='Play audio at '+tsM[1];
+                    pageDiv.appendChild(a);
+                });
+            }
+
             // Copy button
             const copyBtn=document.createElement('button');
             copyBtn.className='page-copy-btn';
@@ -501,6 +518,13 @@ async function loadAllMatches(query,re){
     viewer.innerHTML='';
     viewer.appendChild(resultsContainer);
 
+    // Extract Grain recording base URL from CSV
+    function getGrainBase(ti){
+        if(!csvIndex||!csvIndex[ti]) return '';
+        const m=csvIndex[ti].match(/https:\/\/grain\.com\/share\/recording\/[^?,\s]+\/[^?,\s]+/);
+        return m?m[0]:'';
+    }
+
     for(const ti of matchedIdx){
         if(ctrl.abort) return;
         const t=TRANSCRIPTS[ti];
@@ -527,17 +551,31 @@ async function loadAllMatches(query,re){
                 canvas.width=vp.width;canvas.height=vp.height;
                 await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
 
-                // Add highlights
+                // Add highlights + Grain timestamp links
+                const grainBase=getGrainBase(ti);
                 textContent.items.forEach(item=>{
-                    if(!item.str.toLowerCase().includes(query)) return;
                     const tr=pdfjsLib.Util.transform(vp.transform,item.transform);
                     const fh=Math.sqrt(tr[0]*tr[0]+tr[1]*tr[1]);
-                    const hl=document.createElement('div');hl.className='highlight-box';
-                    hl.style.left=(tr[4]/vp.width*100)+'%';
-                    hl.style.top=((tr[5]-fh)/vp.height*100)+'%';
-                    hl.style.width=Math.max(item.width*2/vp.width*100,2)+'%';
-                    hl.style.height=(fh*1.15/vp.height*100)+'%';
-                    pageDiv.appendChild(hl);
+                    const xp=tr[4]/vp.width*100,yp=(tr[5]-fh)/vp.height*100;
+                    const wp=Math.max(item.width*2/vp.width*100,2),hp=fh*1.15/vp.height*100;
+
+                    // Highlight matching text
+                    if(item.str.toLowerCase().includes(query)){
+                        const hl=document.createElement('div');hl.className='highlight-box';
+                        hl.style.left=xp+'%';hl.style.top=yp+'%';hl.style.width=wp+'%';hl.style.height=hp+'%';
+                        pageDiv.appendChild(hl);
+                    }
+                    // Timestamp links → Grain audio
+                    const tsMatch=item.str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)$/);
+                    if(tsMatch&&grainBase){
+                        const parts=tsMatch[1].split(':').map(Number);
+                        const secs=parts.length===3?parts[0]*3600+parts[1]*60+parts[2]:parts[0]*60+parts[1];
+                        const link=document.createElement('a');
+                        link.href=grainBase+'?t='+secs*1000;link.target='_blank';
+                        link.style.cssText='position:absolute;left:'+xp+'%;top:'+yp+'%;width:'+wp+'%;height:'+hp+'%;z-index:15;cursor:pointer;text-decoration:underline;color:#1d70b8;font-size:0';
+                        link.title='Play audio at '+tsMatch[1];
+                        pageDiv.appendChild(link);
+                    }
                 });
 
                 // Copy button
@@ -659,8 +697,8 @@ function renderEvidence(){
 
 // ── SUPABASE CONFIG ──
 const SUPA_URL='https://tvecnfdqakrevzaeifpk.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2ZWNuZmRxYWtyZXZ6YWVpZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzODIwNjQsImV4cCI6MjA2Mzk1ODA2NH0.q-8ukkJZ4FGSbZyEYp0letP-S58hC2PA6lUOWUH9H2Y';
-const SUPA_BUCKET='JUDICIAL-REVIEW-2026';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2ZWNuZmRxYWtyZXZ6YWVpZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODM4MjA2NCwiZXhwIjoyMDYzOTU4MDY0fQ.KqzZr0iiPNYHFzEzT8utRAu3EorO3LFDbh3dd-U_42c';
+const SUPA_BUCKET='s188';
 
 // ── RENDER EXHIBIT PNG (canvas with highlights + banner + footer baked in) ──
 function renderExhibitPng(entry, exhibitNum){
@@ -724,16 +762,18 @@ function renderExhibitPng(entry, exhibitNum){
     });
 }
 
-// ── UPLOAD ALL TO SUPABASE ──
+// ── UPLOAD ALL TO SUPABASE s188/screenshot/ ──
 window.uploadAll=async function(){
     if(!pinnedPages.length) return;
     const btn=document.getElementById('evUpload');
     btn.disabled=true;
     btn.textContent='Uploading...';
 
-    const ts=Date.now();
-    const folderName='exhibits-'+ts;
+    const now=new Date();
+    const dateStr=now.toISOString().slice(0,10);
+    const ts=now.toISOString().replace(/[:.]/g,'-');
     const results=[];
+    const csvRows=[['DATE_SAVED','DATE_OF_INCIDENT','FILE_NAME','SPEAKER','TIMESTAMP','VERBATIM_QUOTE','SEARCH_TERM','GRAIN_LINK','PAGE','EXHIBIT_URL']];
 
     for(let i=0;i<pinnedPages.length;i++){
         const entry=pinnedPages[i];
@@ -743,7 +783,7 @@ window.uploadAll=async function(){
         const blob=await renderExhibitPng(entry, exhibitNum);
         const safeName=entry.query.replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
         const fileName='EXHIBIT_'+String(exhibitNum).padStart(2,'0')+'_'+safeName+'.png';
-        const path='s188/'+folderName+'/'+fileName;
+        const path='screenshot/'+dateStr+'_'+ts+'/'+fileName;
 
         try{
             const resp=await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+path,{
@@ -758,8 +798,25 @@ window.uploadAll=async function(){
             if(resp.ok){
                 const publicUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+path;
                 results.push({num:exhibitNum,url:publicUrl,file:fileName,entry});
-                // Update the pinned entry with its permanent URL
                 entry.supabaseUrl=publicUrl;
+                // Find incident date from folder name
+                const incDate=(entry.folder.match(/^(\d{4}-\d{2}-\d{2})/)||['',''])[1];
+                // Find Grain link from CSV index
+                let grainLink='',speaker='',verbatim='',timestamp='';
+                if(csvIndex){
+                    const tIdx=TRANSCRIPTS.findIndex(t=>t.folder===entry.folder);
+                    if(tIdx>=0&&csvIndex[tIdx]){
+                        const lines=csvIndex[tIdx].split('\n').slice(1);
+                        for(const line of lines){
+                            if(line.toLowerCase().includes(entry.query.toLowerCase())){
+                                const cols=line.match(/^([^,]*),([^,]*),(".*?"|[^,]*),(.*)/);
+                                if(cols){speaker=cols[1];timestamp=cols[2];verbatim=cols[3].replace(/^"|"$/g,'').substring(0,200);grainLink=cols[4];}
+                                break;
+                            }
+                        }
+                    }
+                }
+                csvRows.push([dateStr,incDate,entry.folder,speaker,timestamp,verbatim,entry.query,grainLink,entry.page,publicUrl]);
             } else {
                 const err=await resp.text();
                 results.push({num:exhibitNum,error:err,file:fileName});
@@ -767,6 +824,21 @@ window.uploadAll=async function(){
         }catch(e){
             results.push({num:exhibitNum,error:e.message,file:fileName});
         }
+    }
+
+    // Upload CSV manifest
+    if(csvRows.length>1){
+        const csvText=csvRows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+        const csvBlob=new Blob([csvText],{type:'text/csv'});
+        const csvPath='screenshot/'+dateStr+'_'+ts+'/exhibit_manifest.csv';
+        try{
+            await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+csvPath,{
+                method:'POST',headers:{'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'text/csv','x-upsert':'true'},
+                body:csvBlob
+            });
+            const csvUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+csvPath;
+            results.push({csvUrl});
+        }catch(e){}
     }
 
     // Show results
@@ -783,7 +855,8 @@ window.uploadAll=async function(){
     const summary=document.createElement('div');
     summary.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:2px solid #0b0c0c;border-radius:8px;padding:24px;z-index:10000;max-width:700px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3)';
     summary.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0">Uploaded '+results.filter(r=>r.url).length+'/'+pinnedPages.length+' Exhibits</h3><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button></div>'
-        +'<div style="font-size:11px;color:#555;margin-bottom:12px">Folder: '+SUPA_BUCKET+'/s188/'+folderName+'/</div>'
+        +'<div style="font-size:11px;color:#555;margin-bottom:12px">Folder: '+SUPA_BUCKET+'/screenshot/'+dateStr+'_'+ts+'/</div>'
+        +(results.find(r=>r.csvUrl)?'<div style="margin-bottom:8px"><a href="'+results.find(r=>r.csvUrl).csvUrl+'" target="_blank" style="color:#1d70b8;font-size:12px;font-weight:700">Download CSV Manifest</a></div>':'')
         +'<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:12px">'
         +results.filter(r=>r.url).map(r=>'<div style="margin-bottom:8px;font-size:12px"><strong>EXHIBIT '+r.num+'</strong> <a href="'+r.url+'" target="_blank" style="color:#1d70b8;word-break:break-all">'+r.url+'</a></div>').join('')
         +'</div>'
