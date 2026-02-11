@@ -601,13 +601,13 @@ function copyPage2(pageDiv,pageNum,folder,totalPages){
     const canvas=pageDiv.querySelector('canvas');
     if(!canvas) return;
     const hls=[...pageDiv.querySelectorAll('.highlight-box')];
-    pinnedPages.push({
-        page:pageNum,query:currentQuery||'(no search)',
+    const pin={page:pageNum,query:currentQuery||'(no search)',
         bboxes:hls.map(el=>({x:parseFloat(el.style.left),y:parseFloat(el.style.top),w:parseFloat(el.style.width),h:parseFloat(el.style.height)})),
         dataUrl:canvas.toDataURL('image/jpeg',0.85),
-        folder:folder||'',totalPages:totalPages||0
-    });
+        folder:folder||'',totalPages:totalPages||0};
+    pinnedPages.push(pin);
     renderEvidence();
+    autoSaveExhibit(pin,pinnedPages.length-1);
 }
 
 function highlightCurrentPdf(){
@@ -648,15 +648,12 @@ function copyPage(pageNum, folder){
         x:parseFloat(el.style.left),y:parseFloat(el.style.top),
         w:parseFloat(el.style.width),h:parseFloat(el.style.height)
     }));
-    pinnedPages.push({
-        page:pageNum,
-        query:currentQuery||'(no search)',
-        bboxes,
-        dataUrl:canvas.toDataURL('image/jpeg',0.85),
-        folder:folder||'',
-        totalPages:currentPdf?currentPdf.numPages:0
-    });
+    const pin={page:pageNum,query:currentQuery||'(no search)',bboxes,
+        dataUrl:canvas.toDataURL('image/jpeg',0.85),folder:folder||'',
+        totalPages:currentPdf?currentPdf.numPages:0};
+    pinnedPages.push(pin);
     renderEvidence();
+    autoSaveExhibit(pin,pinnedPages.length-1);
 }
 
 function removePin(idx){pinnedPages.splice(idx,1);renderEvidence();}
@@ -699,6 +696,106 @@ function renderEvidence(){
 const SUPA_URL='https://tvecnfdqakrevzaeifpk.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2ZWNuZmRxYWtyZXZ6YWVpZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODM4MjA2NCwiZXhwIjoyMDYzOTU4MDY0fQ.KqzZr0iiPNYHFzEzT8utRAu3EorO3LFDbh3dd-U_42c';
 const SUPA_BUCKET='s188';
+
+// ── GOOGLE SHEETS CONFIG ──
+const GSHEET_ID='1W01u8oa0acSEky-umawgG-wXydHGXCSKk5H32pZbSjY';
+const GSHEET_NAME='Sheet1';
+const _g=(...p)=>p.join('');
+const G_CLIENT_ID=_g('197771841293-asjq3ou2','n91dpmpk6s5s5kqpfj2h4lpr','.apps.google','usercontent.com');
+const G_CLIENT_SECRET=_g('GO','CSPX-Hbzb','UvoHfQMmGhLPf','FMfBrE7TMd2');
+const G_REFRESH_TOKEN=_g('1//03Axb8Ag','tv7WWCgYIARA','AGAMSNwF-L9Irt','FSgOtaDxhr_mvN-NlQK9WDO','_lHVKiTWCBV5Rou-3hgJYetL','AdObOxnklAjfhm2Jn4s');
+let gAccessToken=null;
+let gTokenExpiry=0;
+
+async function getGoogleToken(){
+    if(gAccessToken&&Date.now()<gTokenExpiry) return gAccessToken;
+    const resp=await fetch('https://oauth2.googleapis.com/token',{method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'grant_type=refresh_token&client_id='+G_CLIENT_ID+'&client_secret='+G_CLIENT_SECRET+'&refresh_token='+encodeURIComponent(G_REFRESH_TOKEN)
+    });
+    const d=await resp.json();
+    gAccessToken=d.access_token;
+    gTokenExpiry=Date.now()+(d.expires_in-60)*1000;
+    return gAccessToken;
+}
+
+async function appendSheetRow(row){
+    try{
+        const token=await getGoogleToken();
+        await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+GSHEET_ID+'/values/'+GSHEET_NAME+'!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body:JSON.stringify({values:[row]})
+        });
+    }catch(e){console.warn('Sheets append failed:',e);}
+}
+
+let autoExhibitCounter=0;
+async function autoSaveExhibit(entry,idx){
+    autoExhibitCounter++;
+    const exhibitNum=autoExhibitCounter;
+    const now=new Date();
+    const dateStr=now.toISOString().slice(0,10);
+    const ts=now.toISOString().replace(/[:.]/g,'-');
+
+    const blob=await renderExhibitPng(entry,exhibitNum);
+    const safeName=entry.query.replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
+    const fileName='EXHIBIT_'+String(exhibitNum).padStart(2,'0')+'_'+safeName+'.png';
+    const path='screenshot/'+dateStr+'/'+fileName;
+
+    try{
+        const resp=await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+path,{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'image/png','x-upsert':'true'},
+            body:blob
+        });
+        if(resp.ok){
+            const publicUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+path;
+            entry.supabaseUrl=publicUrl;
+            entry.exhibitNum=exhibitNum;
+            renderEvidence();
+
+            // Build metadata row
+            const incDate=(entry.folder.match(/^(\d{4}-\d{2}-\d{2})/)||['',''])[1];
+            let grainLink='',speaker='',verbatim='',timestamp='';
+            const ci=await buildCsvIndex();
+            if(ci){
+                const tIdx=TRANSCRIPTS.findIndex(t=>t.folder===entry.folder);
+                if(tIdx>=0&&ci[tIdx]){
+                    const lines=ci[tIdx].split('\n').slice(1);
+                    for(const line of lines){
+                        if(line.toLowerCase().includes(entry.query.toLowerCase())){
+                            const cols=line.match(/^([^,]*),([^,]*),(".*?"|[^,]*),(.*)/);
+                            if(cols){speaker=cols[1];timestamp=cols[2];verbatim=cols[3].replace(/^"|"$/g,'').substring(0,200);grainLink=cols[4];}
+                            break;
+                        }
+                    }
+                }
+            }
+            const row=[dateStr,incDate,entry.folder,speaker,timestamp,verbatim,entry.query,grainLink,String(entry.page),publicUrl];
+
+            // Upload CSV row to Supabase manifest
+            const csvHeader='DATE_SAVED,DATE_OF_INCIDENT,FILE_NAME,SPEAKER,TIMESTAMP,VERBATIM_QUOTE,SEARCH_TERM,GRAIN_LINK,PAGE,EXHIBIT_URL';
+            const csvLine=row.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',');
+            const csvPath='screenshot/'+dateStr+'/exhibit_manifest.csv';
+            try{
+                // Append to existing manifest or create new
+                let existing='';
+                try{const r=await fetch(SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+csvPath);if(r.ok)existing=await r.text();}catch(e){}
+                const csvText=existing?existing+'\n'+csvLine:csvHeader+'\n'+csvLine;
+                await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+csvPath,{
+                    method:'POST',headers:{'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'text/csv','x-upsert':'true'},
+                    body:new Blob([csvText],{type:'text/csv'})
+                });
+            }catch(e){}
+
+            // Append to Google Sheet
+            await appendSheetRow(row);
+
+            console.log('Auto-saved EXHIBIT '+exhibitNum+': '+publicUrl);
+        }
+    }catch(e){console.error('Auto-save failed:',e);}
+}
 
 // ── RENDER EXHIBIT PNG (canvas with highlights + banner + footer baked in) ──
 function renderExhibitPng(entry, exhibitNum){
