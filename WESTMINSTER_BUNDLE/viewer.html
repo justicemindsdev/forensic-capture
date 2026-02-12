@@ -51,6 +51,10 @@ input[type="text"]:focus{outline:3px solid var(--focus);outline-offset:0;border-
 .page-label{font-size:12px;font-weight:700;color:var(--grey-1);margin-bottom:4px}
 .evidence-page{position:relative;display:inline-block;background:var(--white);box-shadow:0 2px 10px rgba(0,0,0,0.12)}
 .evidence-page canvas{display:block;max-height:calc(100vh - 200px);max-width:calc(100vw - 600px);width:auto;height:auto}
+.evidence-page .textLayer{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;opacity:.25;line-height:1;z-index:12}
+.evidence-page .textLayer span{position:absolute;white-space:pre;color:transparent;cursor:text}
+.evidence-page .textLayer ::selection{background:rgba(0,0,255,.3);color:transparent}
+.evidence-page .textLayer a{color:#1d70b8;text-decoration:underline;cursor:pointer;opacity:1}
 .page-copy-btn{position:absolute;top:4px;right:4px;z-index:20;background:rgba(255,255,255,0.92);border:1px solid var(--blue);border-radius:3px;color:var(--blue);font-size:11px;font-weight:700;padding:2px 6px;cursor:pointer;line-height:1.3;font-family:inherit}
 .page-copy-btn:hover{background:var(--blue);color:var(--white)}
 .highlight-box{position:absolute;background:rgb(255,221,0);mix-blend-mode:darken;border:none;pointer-events:none;z-index:10;animation:hl-pulse 2s ease-in-out infinite}
@@ -282,7 +286,6 @@ const EXHIBITS=[
 <div class="evidence-panel">
 <div class="ev-header">
     <div class="ev-header-left">Evidence <span class="ev-count" id="evCount">0</span></div>
-    <button class="ev-download" id="evUpload" disabled onclick="uploadAll()" style="background:#1d70b8;margin-right:4px">SAVE TO SUPABASE</button>
     <button class="ev-download" id="evDownload" disabled onclick="downloadAll()">PDF</button>
 </div>
 <div class="ev-list" id="evList">
@@ -383,6 +386,30 @@ function renderToc(){
     }
 }
 
+// ── TEXT LAYER (selectable OCR text over canvas) ──
+function addTextLayer(pageDiv,textContent,vp,grainBase){
+    const tl=document.createElement('div');tl.className='textLayer';
+    const c=pageDiv.querySelector('canvas');tl.style.width=c.width+'px';tl.style.height=c.height+'px';
+    textContent.items.forEach(item=>{
+        const tr=pdfjsLib.Util.transform(vp.transform,item.transform);
+        const fh=Math.sqrt(tr[0]*tr[0]+tr[1]*tr[1]);
+        const x=tr[4],y=tr[5]-fh;
+        const tsM=item.str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)$/);
+        if(tsM&&grainBase){
+            const pts=tsM[1].split(':').map(Number);
+            const secs=pts.length===3?pts[0]*3600+pts[1]*60+pts[2]:pts[0]*60+pts[1];
+            const a=document.createElement('a');a.href=grainBase+'?t='+secs*1000;a.target='_blank';a.title='Play at '+tsM[1];
+            a.textContent=item.str;a.style.cssText='left:'+x+'px;top:'+y+'px;font-size:'+fh+'px;font-family:sans-serif';
+            tl.appendChild(a);
+        }else{
+            const s=document.createElement('span');s.textContent=item.str;
+            s.style.cssText='left:'+x+'px;top:'+y+'px;font-size:'+fh+'px;font-family:sans-serif';
+            tl.appendChild(s);
+        }
+    });
+    pageDiv.appendChild(tl);
+}
+
 // ── LOAD TRANSCRIPT PDF ──
 async function loadTranscript(idx){
     const t=TRANSCRIPTS[idx];
@@ -440,24 +467,6 @@ async function loadTranscript(idx){
             });
             pageTextData.push({pageNum:p, items, fullText:items.map(i=>i.str).join(' ')});
 
-            // Grain timestamp links for single-transcript view
-            const tIdx2=TRANSCRIPTS.findIndex(tr=>tr.folder===t.folder);
-            const grainBase2=(csvIndex&&tIdx2>=0&&csvIndex[tIdx2])?(csvIndex[tIdx2].match(/https:\/\/grain\.com\/share\/recording\/[^?,\s]+\/[^?,\s]+/)||[''])[0]:'';
-            if(grainBase2){
-                items.forEach(item=>{
-                    const tsM=item.str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)$/);
-                    if(!tsM) return;
-                    const pts=tsM[1].split(':').map(Number);
-                    const secs=pts.length===3?pts[0]*3600+pts[1]*60+pts[2]:pts[0]*60+pts[1];
-                    const a=document.createElement('a');
-                    a.href=grainBase2+'?t='+secs*1000;a.target='_blank';
-                    a.style.cssText='position:absolute;left:'+item.x+'%;top:'+item.y+'%;width:'+item.w+'%;height:'+item.h+'%;z-index:15;cursor:pointer';
-                    a.title='Play audio at '+tsM[1];
-                    pageDiv.appendChild(a);
-                });
-            }
-
-            // Copy button
             const copyBtn=document.createElement('button');
             copyBtn.className='page-copy-btn';
             copyBtn.textContent='\u2295 Copy';
@@ -465,6 +474,9 @@ async function loadTranscript(idx){
 
             pageDiv.appendChild(canvas);
             pageDiv.appendChild(copyBtn);
+            const tIdx2=TRANSCRIPTS.findIndex(tr=>tr.folder===t.folder);
+            const gb2=(csvIndex&&tIdx2>=0&&csvIndex[tIdx2])?(csvIndex[tIdx2].match(/https:\/\/grain\.com\/share\/recording\/[^?,\s]+\/[^?,\s]+/)||[''])[0]:'';
+            addTextLayer(pageDiv,textContent,vp,gb2);
             wrapper.appendChild(label);
             wrapper.appendChild(pageDiv);
             viewer.appendChild(wrapper);
@@ -579,39 +591,26 @@ async function loadAllMatches(query,re){
                 canvas.width=vp.width;canvas.height=vp.height;
                 await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
 
-                // Add highlights + Grain timestamp links
+                // Highlights
                 const grainBase=getGrainBase(ti);
                 textContent.items.forEach(item=>{
                     const tr=pdfjsLib.Util.transform(vp.transform,item.transform);
                     const fh=Math.sqrt(tr[0]*tr[0]+tr[1]*tr[1]);
                     const xp=tr[4]/vp.width*100,yp=(tr[5]-fh)/vp.height*100;
                     const wp=Math.max(item.width*2/vp.width*100,2),hp=fh*1.15/vp.height*100;
-
-                    // Highlight matching text
                     if(item.str.toLowerCase().includes(query)){
                         const hl=document.createElement('div');hl.className='highlight-box';
                         hl.style.left=xp+'%';hl.style.top=yp+'%';hl.style.width=wp+'%';hl.style.height=hp+'%';
                         pageDiv.appendChild(hl);
                     }
-                    // Timestamp links → Grain audio
-                    const tsMatch=item.str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)$/);
-                    if(tsMatch&&grainBase){
-                        const parts=tsMatch[1].split(':').map(Number);
-                        const secs=parts.length===3?parts[0]*3600+parts[1]*60+parts[2]:parts[0]*60+parts[1];
-                        const link=document.createElement('a');
-                        link.href=grainBase+'?t='+secs*1000;link.target='_blank';
-                        link.style.cssText='position:absolute;left:'+xp+'%;top:'+yp+'%;width:'+wp+'%;height:'+hp+'%;z-index:15;cursor:pointer;text-decoration:underline;color:#1d70b8;font-size:0';
-                        link.title='Play audio at '+tsMatch[1];
-                        pageDiv.appendChild(link);
-                    }
                 });
 
-                // Copy button
                 const copyBtn=document.createElement('button');copyBtn.className='page-copy-btn';
                 copyBtn.textContent='\u2295 Copy';
                 copyBtn.addEventListener('click',(function(pn,folder,np){return function(){copyPage2(this.closest('.evidence-page'),pn,folder,np);};})(p,t.folder,doc.numPages));
 
                 pageDiv.appendChild(canvas);pageDiv.appendChild(copyBtn);
+                addTextLayer(pageDiv,textContent,vp,grainBase);
                 wrapper.appendChild(label);wrapper.appendChild(pageDiv);
                 resultsContainer.appendChild(wrapper);
 
@@ -689,7 +688,6 @@ function removePin(idx){pinnedPages.splice(idx,1);renderEvidence();}
 function renderEvidence(){
     evCount.textContent=pinnedPages.length;
     evDl.disabled=pinnedPages.length===0;
-    document.getElementById('evUpload').disabled=pinnedPages.length===0;
     if(!pinnedPages.length){evList.innerHTML='<div class="ev-empty">Hit &#8853; Copy on any page to pin it here.</div>';return;}
     evList.innerHTML='';
     pinnedPages.forEach((entry,idx)=>{
@@ -698,23 +696,28 @@ function renderEvidence(){
         head.innerHTML='<span class="ev-num-badge">'+(idx+1)+'</span><button class="ev-rm" title="Remove">&times;</button>';
         head.querySelector('.ev-rm').addEventListener('click',()=>removePin(idx));
         const thumb=document.createElement('div');thumb.className='ev-thumb';
-        const tImg=document.createElement('img');tImg.src=entry.dataUrl;thumb.appendChild(tImg);
-        entry.bboxes.forEach(bb=>{
-            const hl=document.createElement('div');hl.className='ev-hl';
-            hl.style.left=bb.x+'%';hl.style.top=bb.y+'%';hl.style.width=bb.w+'%';hl.style.height=bb.h+'%';
-            thumb.appendChild(hl);
-        });
-        const banner=document.createElement('div');banner.className='ev-banner';
-        banner.innerHTML='<span>'+esc(entry.query)+'</span><span>Exhibit '+(idx+1)+'</span>';
-        thumb.appendChild(banner);
+        const tImg=document.createElement('img');tImg.src=entry.exhibitDataUrl||entry.dataUrl;thumb.appendChild(tImg);
+        if(!entry.exhibitDataUrl){
+            entry.bboxes.forEach(bb=>{
+                const hl=document.createElement('div');hl.className='ev-hl';
+                hl.style.left=bb.x+'%';hl.style.top=bb.y+'%';hl.style.width=bb.w+'%';hl.style.height=bb.h+'%';
+                thumb.appendChild(hl);
+            });
+            const banner=document.createElement('div');banner.className='ev-banner';
+            banner.innerHTML='<span>'+esc(entry.query)+'</span><span>Exhibit '+(idx+1)+'</span>';
+            thumb.appendChild(banner);
+        }
         const notes=document.createElement('div');notes.className='ev-notes';
         notes.textContent=entry.folder+' | "'+entry.query+'" | Page '+entry.page+' of '+entry.totalPages;
         if(entry.supabaseUrl){
             const link=document.createElement('a');
             link.href=entry.supabaseUrl;link.target='_blank';
             link.style.cssText='display:block;font-size:9px;color:#1d70b8;margin-top:3px;word-break:break-all';
-            link.textContent=entry.supabaseUrl;
+            link.textContent='Saved';
             notes.appendChild(link);
+        }else if(entry.saving){
+            const s=document.createElement('span');s.style.cssText='display:block;font-size:9px;color:#f47738;margin-top:3px';
+            s.textContent='Saving...';notes.appendChild(s);
         }
         item.appendChild(head);item.appendChild(thumb);item.appendChild(notes);evList.appendChild(item);
     });
@@ -737,29 +740,36 @@ let gTokenExpiry=0;
 
 async function getGoogleToken(){
     if(gAccessToken&&Date.now()<gTokenExpiry) return gAccessToken;
-    const resp=await fetch('https://oauth2.googleapis.com/token',{method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:'grant_type=refresh_token&client_id='+G_CLIENT_ID+'&client_secret='+G_CLIENT_SECRET+'&refresh_token='+encodeURIComponent(G_REFRESH_TOKEN)
-    });
-    const d=await resp.json();
-    gAccessToken=d.access_token;
-    gTokenExpiry=Date.now()+(d.expires_in-60)*1000;
-    return gAccessToken;
+    try{
+        const resp=await fetch('https://oauth2.googleapis.com/token',{method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:'grant_type=refresh_token&client_id='+G_CLIENT_ID+'&client_secret='+G_CLIENT_SECRET+'&refresh_token='+encodeURIComponent(G_REFRESH_TOKEN)
+        });
+        const d=await resp.json();
+        if(d.error){console.error('Google token error:',d);return null;}
+        gAccessToken=d.access_token;
+        gTokenExpiry=Date.now()+(d.expires_in-60)*1000;
+        return gAccessToken;
+    }catch(e){console.error('Google token fetch failed:',e);return null;}
 }
 
 async function appendSheetRow(row){
     try{
         const token=await getGoogleToken();
-        await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+GSHEET_ID+'/values/'+GSHEET_NAME+'!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
+        if(!token){console.warn('No Google token, skipping sheet append');return;}
+        const resp=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+GSHEET_ID+'/values/'+GSHEET_NAME+'!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
             method:'POST',
             headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
             body:JSON.stringify({values:[row]})
         });
+        if(!resp.ok){const t=await resp.text();console.error('Sheets append error:',resp.status,t);}
+        else{console.log('Row appended to Google Sheet');}
     }catch(e){console.warn('Sheets append failed:',e);}
 }
 
 let autoExhibitCounter=0;
 async function autoSaveExhibit(entry,idx){
+    entry.saving=true;
     autoExhibitCounter++;
     const exhibitNum=autoExhibitCounter;
     const now=new Date();
@@ -767,8 +777,11 @@ async function autoSaveExhibit(entry,idx){
     const ts=now.toISOString().replace(/[:.]/g,'-');
 
     const blob=await renderExhibitPng(entry,exhibitNum);
+    entry.exhibitDataUrl=URL.createObjectURL(blob);
+    renderEvidence();
     const safeName=entry.query.replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
-    const fileName='EXHIBIT_'+String(exhibitNum).padStart(2,'0')+'_'+safeName+'.png';
+    const folderSlug=(entry.folder||'').replace(/[^a-zA-Z0-9_-]/g,'_').substring(0,60);
+    const fileName=folderSlug+'__EXHIBIT_'+String(exhibitNum).padStart(2,'0')+'_'+safeName+'.png';
     const path='screenshot/'+dateStr+'/'+fileName;
 
     try{
@@ -781,6 +794,7 @@ async function autoSaveExhibit(entry,idx){
             const publicUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+path;
             entry.supabaseUrl=publicUrl;
             entry.exhibitNum=exhibitNum;
+            entry.saving=false;
             renderEvidence();
 
             // Build metadata row
@@ -887,116 +901,15 @@ function renderExhibitPng(entry, exhibitNum){
     });
 }
 
-// ── UPLOAD ALL TO SUPABASE s188/screenshot/ ──
-window.uploadAll=async function(){
-    if(!pinnedPages.length) return;
-    const btn=document.getElementById('evUpload');
-    btn.disabled=true;
-    btn.textContent='Uploading...';
-
-    const now=new Date();
-    const dateStr=now.toISOString().slice(0,10);
-    const ts=now.toISOString().replace(/[:.]/g,'-');
-    const results=[];
-    const csvRows=[['DATE_SAVED','DATE_OF_INCIDENT','FILE_NAME','SPEAKER','TIMESTAMP','VERBATIM_QUOTE','SEARCH_TERM','GRAIN_LINK','PAGE','EXHIBIT_URL']];
-
-    for(let i=0;i<pinnedPages.length;i++){
-        const entry=pinnedPages[i];
-        const exhibitNum=i+1;
-        btn.textContent='Uploading '+(i+1)+'/'+pinnedPages.length+'...';
-
-        const blob=await renderExhibitPng(entry, exhibitNum);
-        const safeName=entry.query.replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
-        const fileName='EXHIBIT_'+String(exhibitNum).padStart(2,'0')+'_'+safeName+'.png';
-        const path='screenshot/'+dateStr+'_'+ts+'/'+fileName;
-
-        try{
-            const resp=await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+path,{
-                method:'POST',
-                headers:{
-                    'Authorization':'Bearer '+SUPA_KEY,
-                    'Content-Type':'image/png',
-                    'x-upsert':'true'
-                },
-                body:blob
-            });
-            if(resp.ok){
-                const publicUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+path;
-                results.push({num:exhibitNum,url:publicUrl,file:fileName,entry});
-                entry.supabaseUrl=publicUrl;
-                // Find incident date from folder name
-                const incDate=(entry.folder.match(/^(\d{4}-\d{2}-\d{2})/)||['',''])[1];
-                // Find Grain link from CSV index
-                let grainLink='',speaker='',verbatim='',timestamp='';
-                if(csvIndex){
-                    const tIdx=TRANSCRIPTS.findIndex(t=>t.folder===entry.folder);
-                    if(tIdx>=0&&csvIndex[tIdx]){
-                        const lines=csvIndex[tIdx].split('\n').slice(1);
-                        for(const line of lines){
-                            if(line.toLowerCase().includes(entry.query.toLowerCase())){
-                                const cols=line.match(/^([^,]*),([^,]*),(".*?"|[^,]*),(.*)/);
-                                if(cols){speaker=cols[1];timestamp=cols[2];verbatim=cols[3].replace(/^"|"$/g,'').substring(0,200);grainLink=cols[4];}
-                                break;
-                            }
-                        }
-                    }
-                }
-                csvRows.push([dateStr,incDate,entry.folder,speaker,timestamp,verbatim,entry.query,grainLink,entry.page,publicUrl]);
-            } else {
-                const err=await resp.text();
-                results.push({num:exhibitNum,error:err,file:fileName});
-            }
-        }catch(e){
-            results.push({num:exhibitNum,error:e.message,file:fileName});
-        }
-    }
-
-    // Upload CSV manifest
-    if(csvRows.length>1){
-        const csvText=csvRows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-        const csvBlob=new Blob([csvText],{type:'text/csv'});
-        const csvPath='screenshot/'+dateStr+'_'+ts+'/exhibit_manifest.csv';
-        try{
-            await fetch(SUPA_URL+'/storage/v1/object/'+SUPA_BUCKET+'/'+csvPath,{
-                method:'POST',headers:{'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'text/csv','x-upsert':'true'},
-                body:csvBlob
-            });
-            const csvUrl=SUPA_URL+'/storage/v1/object/public/'+SUPA_BUCKET+'/'+csvPath;
-            results.push({csvUrl});
-        }catch(e){}
-    }
-
-    // Show results
-    btn.textContent='SAVE TO SUPABASE';
-    btn.disabled=false;
-
-    // Update evidence list with URLs
-    renderEvidence();
-
-    // Show URL summary modal
-    const urls=results.filter(r=>r.url).map(r=>'EXHIBIT '+r.num+': '+r.url).join('\\n');
-    const errors=results.filter(r=>r.error);
-
-    const summary=document.createElement('div');
-    summary.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:2px solid #0b0c0c;border-radius:8px;padding:24px;z-index:10000;max-width:700px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3)';
-    summary.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0">Uploaded '+results.filter(r=>r.url).length+'/'+pinnedPages.length+' Exhibits</h3><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button></div>'
-        +'<div style="font-size:11px;color:#555;margin-bottom:12px">Folder: '+SUPA_BUCKET+'/screenshot/'+dateStr+'_'+ts+'/</div>'
-        +(results.find(r=>r.csvUrl)?'<div style="margin-bottom:8px"><a href="'+results.find(r=>r.csvUrl).csvUrl+'" target="_blank" style="color:#1d70b8;font-size:12px;font-weight:700">Download CSV Manifest</a></div>':'')
-        +'<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:12px">'
-        +results.filter(r=>r.url).map(r=>'<div style="margin-bottom:8px;font-size:12px"><strong>EXHIBIT '+r.num+'</strong> <a href="'+r.url+'" target="_blank" style="color:#1d70b8;word-break:break-all">'+r.url+'</a></div>').join('')
-        +'</div>'
-        +'<button onclick="navigator.clipboard.writeText(`'+urls.replace(/`/g,"\\`")+'`);this.textContent=&quot;Copied!&quot;" style="background:#1d70b8;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:700">Copy All URLs</button>'
-        +(errors.length?'<div style="color:#d4351c;margin-top:12px;font-size:11px">'+errors.map(e=>'Exhibit '+e.num+': '+e.error).join('<br>')+'</div>':'');
-    document.body.appendChild(summary);
-};
+// ── (uploadAll removed — auto-save happens on each copy) ──
 
 // ── DOWNLOAD ──
 window.downloadAll=function(){
     if(!pinnedPages.length) return;
     const dateStr=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-    const tocRows=pinnedPages.map((e,i)=>'<tr><td><strong>Exhibit '+(i+1)+'</strong></td><td>'+esc(e.folder)+'</td><td>'+e.page+'</td><td style="font-size:10pt;font-style:italic">"'+esc(e.query)+'"</td></tr>').join('');
-    const pages=pinnedPages.map((e,i)=>'<div class="page-break"></div><div class="exhibit-page"><div class="exhibit-banner"><span>'+esc(e.query.toUpperCase())+'</span><span>EXHIBIT '+(i+1)+'</span></div><div class="exhibit-body"><img src="'+e.dataUrl+'" class="exhibit-img"></div><div class="exhibit-footer">'+esc(e.folder)+' | "'+esc(e.query)+'" | Page '+e.page+' of '+e.totalPages+'</div></div>').join('');
-    const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Westminster JR Evidence Bundle</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;padding:0;font-family:"Times New Roman",serif;font-size:12pt;line-height:1.5;color:#000}.toc-page{padding:2.5cm 2cm 2cm}.toc-title{text-align:center;margin-bottom:28px}.toc-title h1{font-size:20pt;margin-bottom:6px}.toc-title .sub{font-size:13pt;font-weight:normal;color:#333}.toc-title .dt{font-size:10pt;color:#666;margin-top:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f5f5f5;font-size:10pt}td{font-size:11pt}.page-break{page-break-before:always}.exhibit-page{display:flex;flex-direction:column;height:29.7cm;page-break-inside:avoid}.exhibit-banner{background:#0b0c0c;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 2cm;font-weight:bold;font-size:14pt;font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:.05em;flex-shrink:0}.exhibit-body{flex:1;display:flex;align-items:center;justify-content:center;padding:.6cm 2cm;overflow:hidden}.exhibit-img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 1px 6px rgba(0,0,0,.15)}.exhibit-footer{flex-shrink:0;border-top:1px solid #ccc;padding:.4cm 2cm;font-size:9pt;color:#555;font-family:"Helvetica Neue",Arial,sans-serif}</style></head><body><div class="toc-page"><div class="toc-title"><h1>WESTMINSTER JR EVIDENCE BUNDLE</h1><div class="sub">Ben Mak v Westminster City Council</div><div class="dt">Generated: '+dateStr+'</div></div><h3 style="font-size:13pt;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:5px">Index of Exhibits</h3><table><thead><tr><th style="width:70px">Exhibit</th><th>Document</th><th style="width:42px">Page</th><th>Highlighted Text</th></tr></thead><tbody>'+tocRows+'</tbody></table></div>'+pages+'</body></html>';
+    const tocRows=pinnedPages.map((e,i)=>'<tr><td><strong>Exhibit '+(i+1)+'</strong></td><td>'+esc(e.folder)+'</td><td>'+e.page+'</td><td style="font-size:10pt;font-style:italic">"'+esc(e.query)+'"</td><td style="font-size:8pt">'+(e.supabaseUrl?'<a href="'+esc(e.supabaseUrl)+'">Link</a>':'')+'</td></tr>').join('');
+    const pages=pinnedPages.map((e,i)=>'<div class="page-break"></div><div class="exhibit-page"><div class="exhibit-body"><img src="'+(e.exhibitDataUrl||e.dataUrl)+'" class="exhibit-img"></div><div class="exhibit-footer">'+esc(e.folder)+' | "'+esc(e.query)+'" | Page '+e.page+' of '+e.totalPages+(e.supabaseUrl?' | <a href="'+esc(e.supabaseUrl)+'">'+esc(e.supabaseUrl)+'</a>':'')+'</div></div>').join('');
+    const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Westminster JR Evidence Bundle</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;padding:0;font-family:"Times New Roman",serif;font-size:12pt;line-height:1.5;color:#000}.toc-page{padding:2.5cm 2cm 2cm}.toc-title{text-align:center;margin-bottom:28px}.toc-title h1{font-size:20pt;margin-bottom:6px}.toc-title .sub{font-size:13pt;font-weight:normal;color:#333}.toc-title .dt{font-size:10pt;color:#666;margin-top:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f5f5f5;font-size:10pt}td{font-size:11pt}.page-break{page-break-before:always}.exhibit-page{display:flex;flex-direction:column;height:29.7cm;page-break-inside:avoid}.exhibit-banner{background:#0b0c0c;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 2cm;font-weight:bold;font-size:14pt;font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:.05em;flex-shrink:0}.exhibit-body{flex:1;display:flex;align-items:center;justify-content:center;padding:.6cm 2cm;overflow:hidden}.exhibit-img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 1px 6px rgba(0,0,0,.15)}.exhibit-footer{flex-shrink:0;border-top:1px solid #ccc;padding:.4cm 2cm;font-size:9pt;color:#555;font-family:"Helvetica Neue",Arial,sans-serif}</style></head><body><div class="toc-page"><div class="toc-title"><h1>WESTMINSTER JR EVIDENCE BUNDLE</h1><div class="sub">Ben Mak v Westminster City Council</div><div class="dt">Generated: '+dateStr+'</div></div><h3 style="font-size:13pt;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:5px">Index of Exhibits</h3><table><thead><tr><th style="width:70px">Exhibit</th><th>Document</th><th style="width:42px">Page</th><th>Highlighted Text</th><th style="width:40px">Link</th></tr></thead><tbody>'+tocRows+'</tbody></table></div>'+pages+'</body></html>';
     const blob=new Blob([html],{type:'text/html'});
     const url=URL.createObjectURL(blob);
     const w=window.open(url,'_blank');
