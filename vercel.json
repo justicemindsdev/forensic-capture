@@ -1,8 +1,27 @@
 {
   "rewrites": [
-    { "source": "/v/:slug", "destination": "/v/[slug].html" },
-    { "source": "/m/:slug", "destination": "/m/[slug].html" },
-    { "source": "/westminster", "destination": "/WESTMINSTER_BUNDLE/viewer.html" },
-    { "source": "/westminster-jr", "destination": "/WESTMINSTER_BUNDLE/viewer.html" }
+    {
+      "source": "/v/:slug",
+      "destination": "/v/[slug].html"
+    },
+    {
+      "source": "/m/:slug",
+      "destination": "/m/[slug].html"
+    },
+    {
+      "source": "/westminster",
+      "destination": "/WESTMINSTER_BUNDLE/viewer.html"
+    },
+    {
+      "source": "/westminster-jr",
+      "destination": "/WESTMINSTER_BUNDLE/viewer.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/WESTMINSTER_BUNDLE/viewer.html",
+      "permanent": false
+    }
   ]
 }
